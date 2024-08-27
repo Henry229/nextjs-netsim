@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/toaster';
+import { Spinner } from '@/components/ui/spinner';
 // import ForgotPasswordModal from './forgotPasswordModal';
 
 interface LoginModalProps {
@@ -17,10 +18,11 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onSignUpClick }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   // const [showForgotPassword, setShowForgotPassword] = useState(false);
   const router = useRouter();
-  const toast = useToast();
+  const { toast } = useToast();
   const { data: session, status } = useSession();
 
   useEffect(() => {
@@ -36,31 +38,47 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onSignUpClick }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     setError('');
     try {
       const res = await signIn('credentials', {
         email,
         password,
         redirect: false,
-        // callbackUrl: '/dashboard',
       });
       if (res?.error) {
         setError(res.error);
-        toast.error(res.error);
+        toast({
+          title: 'Error',
+          description: res.error,
+          variant: 'destructive',
+        });
       } else if (res?.url) {
-        toast.success('Logged in successfully');
+        toast({
+          title: 'Success',
+          description: 'Logged in successfully',
+        });
         router.push(res.url);
       }
     } catch (error) {
       console.error('Login error', error);
-      setError('An unexpected error occurred');
+      const errorMessage =
+        error instanceof Error ? error.message : 'An unexpected error occurred';
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+      // setError(errorMessage);
     }
   };
 
-  const handleSignUpLinkClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
-    onSignUpClick();
-  };
+  // const handleSignUpLinkClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  //   e.preventDefault();
+  //   onSignUpClick();
+  // };
 
   // const handleForgotPasswordClick = (
   //   e: React.MouseEvent<HTMLAnchorElement>
@@ -103,7 +121,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onSignUpClick }) => {
             required
           />
         </div>
-        <div className='flex items-center justify-between'>
+        {/* <div className='flex items-center justify-between'>
           <div className='flex items-center'>
             <input
               id='remember-me'
@@ -118,16 +136,17 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onSignUpClick }) => {
             </label>
           </div>
           <div className='text-sm'>
-            <a
+            <Link
               href='#'
               onClick={() => {}}
               className='font-medium text-primary hover:text-primary/80'
             >
               Forgot your password?
-            </a>
+            </Link>
           </div>
-        </div>
-        <Button type='submit' className='w-full'>
+        </div> */}
+        <Button type='submit' className='w-full' disabled={loading}>
+          {loading ? <Spinner className='mr-2' /> : null}
           Sign in
         </Button>
       </form>
@@ -136,7 +155,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onSignUpClick }) => {
         Don&apos;t have an account?{' '}
         <Link
           href='/signup'
-          onClick={handleSignUpLinkClick}
+          onClick={onSignUpClick}
           className='font-medium text-primary hover:text-primary/80'
         >
           Sign up

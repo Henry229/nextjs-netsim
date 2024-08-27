@@ -3,11 +3,11 @@ import { Open_Sans } from 'next/font/google';
 import Navbar from '@/components/Navbar';
 import ClientLayout from '@/components/ClientLayout';
 import { Metadata } from 'next';
-import { SimProvider } from './contexts/simContext';
-import AuthProvider from '@/components/AuthProvider';
-import { ThemeProvider } from './contexts/theme-provider';
+import { ThemeProvider } from '@/contexts/theme-provider';
+import AuthProvider from '@/contexts/authProvider';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
+import { SimProvider } from '@/contexts/simContext';
 
 const openSans = Open_Sans({ subsets: ['latin'] });
 
