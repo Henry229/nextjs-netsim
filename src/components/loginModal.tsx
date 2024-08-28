@@ -17,9 +17,9 @@ interface LoginModalProps {
 const LoginModal: React.FC<LoginModalProps> = ({ onClose, onSignUpClick }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
+  // const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  // const [error, setError] = useState('');
   // const [showForgotPassword, setShowForgotPassword] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
@@ -32,14 +32,14 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onSignUpClick }) => {
     }
   }, [status, onClose, router]);
 
-  if (status === 'loading') {
-    return <div>Loading...</div>;
-  }
+  // if (status === 'loading') {
+  //   return <div>Loading...</div>;
+  // }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    // setError('');
     try {
       const res = await signIn('credentials', {
         email,
@@ -47,7 +47,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onSignUpClick }) => {
         redirect: false,
       });
       if (res?.error) {
-        setError(res.error);
+        // setError(res.error);
         toast({
           title: 'Error',
           description: res.error,
@@ -146,11 +146,11 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onSignUpClick }) => {
           </div>
         </div> */}
         <Button type='submit' className='w-full' disabled={loading}>
-          {loading ? <Spinner className='mr-2' /> : null}
+          {loading ? <Spinner /> : null}
           Sign in
         </Button>
       </form>
-      {error && <p className='mt-2 text-sm text-destructive'>{error}</p>}
+      {/* {error && <p className='mt-2 text-sm text-destructive'>{error}</p>} */}
       <p className='mt-4 text-center text-sm text-muted-foreground'>
         Don&apos;t have an account?{' '}
         <Link

@@ -1,7 +1,8 @@
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import type { NextAuthOptions } from 'next-auth';
-import { signIn } from '@/app/api/authApi';
+import axios from 'axios';
+// import { signIn } from '@/app/api/authApi';
 
 declare module 'next-auth' {
   interface User {
@@ -25,28 +26,40 @@ export const authOptions: NextAuthOptions = {
         email: { label: 'Email', type: 'text' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials, req) {
+      async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error('Email and password are required');
         }
+
         try {
-          const response = await signIn(
-            credentials.email,
-            credentials.password
+          const response = await axios.post(
+            `${process.env.NEXTAUTH_URL}/api/auth/signin`,
+            {
+              email: credentials.email,
+              password: credentials.password,
+            },
+            {
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            }
           );
-          if (response && response.token) {
-            const { token } = response;
+
+          const data = await response.data;
+
+          if (response.status === 200 && data.user) {
             return {
-              id: token.id,
-              email: token.email,
-              name: token.name,
-              roleId: token.roleId,
+              id: data.user.id,
+              email: data.user.email,
+              name: data.user.name,
+              roleId: data.user.roleId,
             };
           }
-          return null;
+
+          throw new Error(data.error || 'Authentication failed');
         } catch (error) {
           console.error('Authentication error:', error);
-          return null;
+          throw error;
         }
       },
     }),
