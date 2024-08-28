@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model SimRole {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique @db.VarChar(50)
+  description String?
+  createdAt   DateTime  @default(now()) @db.Timestamptz
+  updatedAt   DateTime  @default(now()) @db.Timestamptz
+  users       SimUser[]
+
+  @@map("sim_role")
+}
+
+model SimUser {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique @db.VarChar(255)
+  password  String   @db.VarChar(255)
+  name      String?  @db.VarChar(255)
+  roleId    Int
+  role      SimRole  @relation(fields: [roleId], references: [id])
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @default(now()) @db.Timestamptz
+
+  @@map("sim_user")
+}
+
+model NetJasperDevices {
+  iccid               String    @id
+  status              String?
+  imei                String?
+  msisdn              String?
+  modemId             String?   @map("modem_id")
+  ratePlan            String?
+  communicationPlan   String?
+  companyId           Int?      @map("company_id")
+  companyName         String?   @map("company_name")
+  trackerId           String?   @map("tracker_id")
+  customer            String?
+  dateUpdated         DateTime? @map("date_updated")
+  ctdDataUsage        Float?
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  @@map("net_jasper_devices")
+}
+
+model NetKoreDevices {
+  iccid                 String   @id
+  subscription_id       String
+  state                 String
+  apn_feature           String?
+  rate_plan             String?
+  session_status        String?
+  eid                   String?
+  service_type          String?
+  msisdn                String?
+  imsi                  String?
+  imei                  String?
+  product_offer         String?
+  stock_order_request_id String?
+  rsp_state             String?
+  product_offer_type    String?
+  serial                String?
+  model                 String?
+  cost_center_id        String?
+  ip_address            String?
+  apn_id                String?
+  data_usage            Float?    
+  sms_usage             Float?    
+  voice_usage           Float?    
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  @@map("net_kore_devices")
+}
+
+enum status {
+  ACTIVATED
+  ACTIVATION_READY
+  DEACTIVATED
+  INVENTORY
+  PURGED
+  REPLACED
+  RETIRED
+  TEST_READY
+}

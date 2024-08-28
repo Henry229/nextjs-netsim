@@ -9,12 +9,12 @@ import { useToast } from '@/components/ui/toaster';
 import { Spinner } from '@/components/ui/spinner';
 // import ForgotPasswordModal from './forgotPasswordModal';
 
-interface LoginModalProps {
-  onClose: () => void;
-  onSignUpClick: () => void;
-}
+// interface LoginModalProps {
+//   onClose: () => void;
+//   onSignUpClick: () => void;
+// }
 
-const LoginModal: React.FC<LoginModalProps> = ({ onClose, onSignUpClick }) => {
+const LoginModal: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   // const [rememberMe, setRememberMe] = useState(false);
@@ -27,10 +27,10 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onSignUpClick }) => {
 
   useEffect(() => {
     if (status === 'authenticated') {
-      onClose();
+      // onClose();
       router.replace('/dashboard');
     }
-  }, [status, onClose, router]);
+  }, [status, router]);
 
   // if (status === 'loading') {
   //   return <div>Loading...</div>;
@@ -75,6 +75,17 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onSignUpClick }) => {
     }
   };
 
+  const handleClose = () => {
+    router.push('/');
+  };
+
+  const handleSignUpClick = () => {
+    router.push('/signup');
+  };
+
+  if (status === 'loading') {
+    return <div>Loading...</div>;
+  }
   // const handleSignUpLinkClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
   //   e.preventDefault();
   //   onSignUpClick();
@@ -92,36 +103,40 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onSignUpClick }) => {
   // }
 
   return (
-    <div className='w-full max-w-md'>
-      <h2 className='text-2xl font-bold mb-6 text-center'>
-        Sign in to your account
-      </h2>
-      <form onSubmit={handleSubmit} className='space-y-4'>
-        <div>
-          <label htmlFor='email' className='block text-sm font-medium mb-2'>
-            Email address
-          </label>
-          <Input
-            type='email'
-            id='email'
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <label htmlFor='password' className='block text-sm font-medium mb-2'>
-            Password
-          </label>
-          <Input
-            type='password'
-            id='password'
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        {/* <div className='flex items-center justify-between'>
+    <div className='flex flex-col justify-center items-center min-h-screen bg-background p-4'>
+      <div className='w-full max-w-md p-8 bg-background rounded-lg shadow-md'>
+        <h2 className='text-2xl font-bold mb-6 text-center'>
+          Sign in to your account
+        </h2>
+        <form onSubmit={handleSubmit} className='space-y-4'>
+          <div>
+            <label htmlFor='email' className='block text-sm font-medium mb-2'>
+              Email address
+            </label>
+            <Input
+              type='email'
+              id='email'
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label
+              htmlFor='password'
+              className='block text-sm font-medium mb-2'
+            >
+              Password
+            </label>
+            <Input
+              type='password'
+              id='password'
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          {/* <div className='flex items-center justify-between'>
           <div className='flex items-center'>
             <input
               id='remember-me'
@@ -145,22 +160,26 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onSignUpClick }) => {
             </Link>
           </div>
         </div> */}
-        <Button type='submit' className='w-full' disabled={loading}>
-          {loading ? <Spinner /> : null}
-          Sign in
+          <Button type='submit' className='w-full' disabled={loading}>
+            {loading ? <Spinner /> : null}
+            Sign in
+          </Button>
+        </form>
+        {/* {error && <p className='mt-2 text-sm text-destructive'>{error}</p>} */}
+        <p className='mt-4 text-center text-sm text-muted-foreground'>
+          Don&apos;t have an account?{' '}
+          <Link
+            href='/signup'
+            onClick={handleSignUpClick}
+            className='font-medium text-primary hover:text-primary/80'
+          >
+            Sign up
+          </Link>
+        </p>
+        <Button onClick={handleClose} variant='link' className='mt-4 w-full'>
+          Back to Home
         </Button>
-      </form>
-      {/* {error && <p className='mt-2 text-sm text-destructive'>{error}</p>} */}
-      <p className='mt-4 text-center text-sm text-muted-foreground'>
-        Don&apos;t have an account?{' '}
-        <Link
-          href='/signup'
-          onClick={onSignUpClick}
-          className='font-medium text-primary hover:text-primary/80'
-        >
-          Sign up
-        </Link>
-      </p>
+      </div>
     </div>
   );
 };

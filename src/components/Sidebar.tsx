@@ -16,8 +16,8 @@ import { FaRegUser } from 'react-icons/fa';
 import { BsCreditCard } from 'react-icons/bs';
 
 import { useSimContext } from '@/contexts/simContext';
-import { getAllSims } from '@/app/api/simApi';
-import { getAllKoreDevices } from '@/app/api/koreApi';
+// import { getAllSims } from '@/app/api/simApi';
+// import { getAllKoreDevices } from '@/app/api/koreApi';
 
 interface SidebarProps {
   isFixed: boolean;
@@ -52,24 +52,24 @@ function Sidebar({ isFixed, setIsFixed }: SidebarProps): JSX.Element {
     }
   };
 
-  const handleGetAllSims = async () => {
-    try {
-      const simsData = await getAllSims();
-      console.log('++++ SIMs:', simsData[0]);
-      setSims(simsData);
-    } catch (error) {
-      console.error('Error fetching SIMs:', error);
-    }
-  };
+  // const handleGetAllSims = async () => {
+  //   try {
+  //     const simsData = await getAllSims();
+  //     console.log('++++ SIMs:', simsData[0]);
+  //     setSims(simsData);
+  //   } catch (error) {
+  //     console.error('Error fetching SIMs:', error);
+  //   }
+  // };
 
-  const handleGetKoreDevices = async () => {
-    try {
-      const koreDevicesData = await getAllKoreDevices();
-      setKoreDevices(koreDevicesData);
-    } catch (error) {
-      console.error('Error fetching KORE devices:', error);
-    }
-  };
+  // const handleGetKoreDevices = async () => {
+  //   try {
+  //     const koreDevicesData = await getAllKoreDevices();
+  //     setKoreDevices(koreDevicesData);
+  //   } catch (error) {
+  //     console.error('Error fetching KORE devices:', error);
+  //   }
+  // };
 
   return (
     <aside
@@ -151,7 +151,7 @@ function Sidebar({ isFixed, setIsFixed }: SidebarProps): JSX.Element {
                   <Link
                     href='/sim-management/get-all-sims'
                     className='block hover:bg-accent hover:text-accent-foreground p-2 rounded ml-4'
-                    onClick={handleGetAllSims}
+                    // onClick={handleGetAllSims}
                   >
                     Get all SIMs
                   </Link>
@@ -164,7 +164,7 @@ function Sidebar({ isFixed, setIsFixed }: SidebarProps): JSX.Element {
                   <Link
                     href='/sim-management/kore-devices'
                     className='block hover:bg-accent hover:text-accent-foreground p-2 rounded ml-4'
-                    onClick={handleGetKoreDevices}
+                    // onClick={handleGetKoreDevices}
                   >
                     Get KORE Devices
                   </Link>
