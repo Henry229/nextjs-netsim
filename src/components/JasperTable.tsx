@@ -51,7 +51,9 @@ const STATUS = [
   'REPLACED',
   'RETIRED',
   'TEST_READY',
-];
+] as const;
+
+type StatusType = (typeof STATUS)[number] | 'all';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -62,7 +64,7 @@ export default function JasperTable() {
   const [filteredDevices, setFilteredDevices] = useState<JasperDevice[]>([]);
   const [searchIccid, setSearchIccid] = useState('');
   const [searchResult, setSearchResult] = useState<JasperDevice | null>(null);
-  const [selectedState, setSelectedState] = useState<string>('all');
+  const [selectedState, setSelectedState] = useState<StatusType>('all');
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
@@ -166,7 +168,7 @@ export default function JasperTable() {
         {searchResult && <Button onClick={clearSearch}>Clear</Button>}
       </div>
       <Select
-        onValueChange={(value) => setSelectedState(value)}
+        onValueChange={(value: StatusType) => setSelectedState(value)}
         value={selectedState}
       >
         <SelectTrigger className='w-[180px] mb-4'>

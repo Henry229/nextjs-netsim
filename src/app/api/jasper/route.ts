@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const iccid = searchParams.get('iccid');
 
@@ -26,9 +26,14 @@ export async function GET(req: Request) {
   }
 }
 
-export async function PUT(req: Request) {
-  const { iccid } = req.params;
+export async function PUT(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const iccid = searchParams.get('iccid');
   const { status } = await req.json();
+
+  if (!iccid) {
+    return NextResponse.json({ error: 'ICCID is required' }, { status: 400 });
+  }
 
   try {
     const updatedDevice = await prisma.netJasperDevices.update({
