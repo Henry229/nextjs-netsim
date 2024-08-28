@@ -1,11 +1,7 @@
+// src/components/KoreTable.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import {
-  getAllJasper,
-  changeJasperStatus,
-  searchJasperDeviceByIccid,
-} from '@/app/api/jasperApi';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -25,47 +21,46 @@ import {
 } from '@/components/ui/select';
 import { IoIosFlash, IoIosFlashOff } from 'react-icons/io';
 import Pagination from './pagination';
-import { useToast } from '@/components/ui/use-toast';
+import {
+  getAllKoreDevices,
+  changeKoreDeviceStatus,
+  searchKoreDeviceByIccid,
+} from '@/app/api/koreApi';
 import { SyncLoader } from 'react-spinners';
+import { useToast } from '@/components/ui/use-toast';
 
-interface JasperDevice {
+interface KoreDevice {
   iccid: string;
-  status: string;
-  imei: string | null;
-  msisdn: string | null;
-  modemId: string | null;
-  ratePlan: string | null;
-  communicationPlan: string | null;
-  companyId: number | null;
-  companyName: string | null;
-  trackerId: string | null;
-  customer: string | null;
-  dateUpdated: string | null;
-  ctdDataUsage: number | null;
+  subscription_id: string;
+  state: string;
+  msisdn: string;
+  imsi: string;
+  data_usage?: number;
 }
 
-const STATUS = [
-  'ACTIVATED',
-  'ACTIVATION_READY',
-  'DEACTIVATED',
-  'INVENTORY',
-  'PURGED',
-  'REPLACED',
-  'RETIRED',
-  'TEST_READY',
+const STATES = [
+  'Stock',
+  'Active',
+  'Suspend',
+  'Suspend With Charge',
+  'Deactivated',
+  'Pending Scrap',
+  'Scrapped',
+  'Barred',
 ] as const;
 
-type StatusType = (typeof STATUS)[number] | 'all';
+type StateType = (typeof STATES)[number] | 'all';
 
 const ITEMS_PER_PAGE = 10;
 
-export default function JasperTable() {
-  const [jasperDevices, setJasperDevices] = useState<JasperDevice[]>([]);
+export default function KoreTable() {
+  const [koreDevices, setKoreDevices] = useState<KoreDevice[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filteredDevices, setFilteredDevices] = useState<JasperDevice[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [filteredDevices, setFilteredDevices] = useState<KoreDevice[]>([]);
   const [searchIccid, setSearchIccid] = useState('');
-  const [searchResult, setSearchResult] = useState<JasperDevice | null>(null);
-  const [selectedState, setSelectedState] = useState<StatusType>('all');
+  const [searchResult, setSearchResult] = useState<KoreDevice | null>(null);
+  const [selectedState, setSelectedState] = useState<StateType>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
 
@@ -74,34 +69,32 @@ export default function JasperTable() {
   }, []);
 
   useEffect(() => {
-    let result = jasperDevices;
+    let result = koreDevices;
     if (selectedState !== 'all') {
-      result = result.filter((device) => device.status === selectedState);
+      result = result.filter((device) => device.state === selectedState);
     }
     if (searchResult) {
       result = [searchResult];
     }
     setFilteredDevices(result);
     setCurrentPage(1);
-  }, [jasperDevices, selectedState, searchResult]);
+  }, [koreDevices, selectedState, searchResult]);
 
   const fetchDevices = async () => {
+    setLoading(true);
     try {
-      const fetchedDevices = await getAllJasper();
+      const fetchedDevices = await getAllKoreDevices();
       if (Array.isArray(fetchedDevices.simCards)) {
-        setJasperDevices(fetchedDevices.simCards);
+        setKoreDevices(fetchedDevices.simCards);
         setFilteredDevices(fetchedDevices.simCards);
       } else {
-        toast({
-          title: 'Error',
-          description: 'Error fetching devices',
-          variant: 'destructive',
-        });
+        throw new Error('Error fetching devices');
       }
     } catch (err) {
+      setError('Error fetching devices');
       toast({
         title: 'Error',
-        description: 'Error fetching devices',
+        description: 'Failed to fetch devices. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -110,20 +103,21 @@ export default function JasperTable() {
   };
 
   const changeStatus = async (
-    iccid: string,
-    newStatus: 'ACTIVATED' | 'DEACTIVATED'
+    subscriptionId: string,
+    newStatus: 'active' | 'deactivated'
   ) => {
     try {
-      await changeJasperStatus(iccid, newStatus);
+      await changeKoreDeviceStatus(subscriptionId, newStatus);
       fetchDevices();
       toast({
         title: 'Success',
         description: `Device status changed to ${newStatus}`,
       });
     } catch (err) {
+      setError('Error changing device status');
       toast({
         title: 'Error',
-        description: 'Error changing device status',
+        description: 'Failed to change device status. Please try again.',
         variant: 'destructive',
       });
     }
@@ -140,10 +134,11 @@ export default function JasperTable() {
     }
     setLoading(true);
     try {
-      const response = await searchJasperDeviceByIccid(searchIccid);
+      const response = await searchKoreDeviceByIccid(searchIccid);
       if (response.simCards && response.simCards.length > 0) {
         setSearchResult(response.simCards[0]);
         setFilteredDevices([response.simCards[0]]);
+        setError(null);
       } else {
         setSearchResult(null);
         setFilteredDevices([]);
@@ -154,9 +149,10 @@ export default function JasperTable() {
         });
       }
     } catch (err) {
+      setError('Error searching device by ICCID');
       toast({
         title: 'Error',
-        description: 'Error searching device by ICCID',
+        description: 'Failed to search device. Please try again.',
         variant: 'destructive',
       });
       setSearchResult(null);
@@ -169,7 +165,8 @@ export default function JasperTable() {
   const clearSearch = () => {
     setSearchIccid('');
     setSearchResult(null);
-    setFilteredDevices(jasperDevices);
+    setError(null);
+    setFilteredDevices(koreDevices);
     setCurrentPage(1);
   };
 
@@ -182,10 +179,12 @@ export default function JasperTable() {
   if (loading) {
     return (
       <div className='flex justify-center items-center h-screen'>
-        <SyncLoader color='#36D7B7' size={50} />
+        <SyncLoader color='#36D7B7' />
       </div>
     );
   }
+
+  if (error) return <div>{error}</div>;
 
   return (
     <div>
@@ -201,7 +200,7 @@ export default function JasperTable() {
         {searchResult && <Button onClick={clearSearch}>Clear</Button>}
       </div>
       <Select
-        onValueChange={(value: StatusType) => setSelectedState(value)}
+        onValueChange={(value: StateType) => setSelectedState(value)}
         value={selectedState}
       >
         <SelectTrigger className='w-[180px] mb-4'>
@@ -209,7 +208,7 @@ export default function JasperTable() {
         </SelectTrigger>
         <SelectContent>
           <SelectItem value='all'>All State</SelectItem>
-          {STATUS.map((state) => (
+          {STATES.map((state) => (
             <SelectItem key={state} value={state}>
               {state}
             </SelectItem>
@@ -220,44 +219,41 @@ export default function JasperTable() {
         <TableHeader>
           <TableRow>
             <TableHead>ICCID</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>IMEI</TableHead>
+            <TableHead>Subscription ID</TableHead>
+            <TableHead>State</TableHead>
             <TableHead>MSISDN</TableHead>
-            <TableHead>Rate Plan</TableHead>
-            <TableHead>Communication Plan</TableHead>
-            <TableHead>CUSTOMER</TableHead>
-            <TableHead>CTDDATAUSAGE</TableHead>
+            <TableHead>IMSI</TableHead>
+            <TableHead>Data Usage</TableHead>
             <TableHead>Action</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {paginatedDevices.map((device: JasperDevice) => (
+          {paginatedDevices.map((device: KoreDevice) => (
             <TableRow key={device.iccid}>
               <TableCell>{device.iccid}</TableCell>
-              <TableCell>{device.status}</TableCell>
-              <TableCell>{device.imei}</TableCell>
+              <TableCell>{device.subscription_id}</TableCell>
+              <TableCell>{device.state}</TableCell>
               <TableCell>{device.msisdn}</TableCell>
-              <TableCell>{device.ratePlan}</TableCell>
-              <TableCell>{device.communicationPlan}</TableCell>
-              <TableCell>{device.customer}</TableCell>
+              <TableCell>{device.imsi}</TableCell>
               <TableCell>
-                {device.ctdDataUsage
-                  ? (device.ctdDataUsage / 1000000).toFixed(2)
-                  : 0}{' '}
-                M
+                {device.data_usage
+                  ? `${(device.data_usage / 1000000).toFixed(2)} MB`
+                  : 'N/A'}
               </TableCell>
               <TableCell>
                 <Button
                   className='bg-indigo-800 text-white hover:bg-indigo-950 p-0.5 mr-1 h-6 w-6'
-                  onClick={() => changeStatus(device.iccid, 'ACTIVATED')}
-                  disabled={device.status === 'ACTIVATED'}
+                  onClick={() => changeStatus(device.subscription_id, 'active')}
+                  disabled={device.state === 'Active'}
                 >
                   <IoIosFlash />
                 </Button>
                 <Button
                   className='bg-rose-600 text-white hover:bg-rose-900 p-0.5 mr-1 h-6 w-6'
-                  onClick={() => changeStatus(device.iccid, 'DEACTIVATED')}
-                  disabled={device.status === 'DEACTIVATED'}
+                  onClick={() =>
+                    changeStatus(device.subscription_id, 'deactivated')
+                  }
+                  disabled={device.state === 'Deactivated'}
                 >
                   <IoIosFlashOff />
                 </Button>

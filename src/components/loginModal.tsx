@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/toaster';
 import { Spinner } from '@/components/ui/spinner';
+import { X } from 'lucide-react';
+import { SyncLoader } from 'react-spinners';
+
 // import ForgotPasswordModal from './forgotPasswordModal';
 
 // interface LoginModalProps {
@@ -84,7 +87,11 @@ const LoginModal: React.FC = () => {
   };
 
   if (status === 'loading') {
-    return <div>Loading...</div>;
+    return (
+      <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center'>
+        <SyncLoader color='#FF0000' size={15} />
+      </div>
+    );
   }
   // const handleSignUpLinkClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
   //   e.preventDefault();
@@ -103,8 +110,16 @@ const LoginModal: React.FC = () => {
   // }
 
   return (
-    <div className='flex flex-col justify-center items-center min-h-screen bg-background p-4'>
-      <div className='w-full max-w-md p-8 bg-background rounded-lg shadow-md'>
+    <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4'>
+      <div className='bg-gray-800 p-8 rounded-lg shadow-lg max-w-md w-full relative'>
+        {/* <div className='flex flex-col justify-center items-center min-h-screen bg-background p-4'> */}
+        {/* <div className='w-full max-w-md p-8 bg-background rounded-lg shadow-md'> */}
+        <button
+          onClick={handleClose}
+          className='absolute top-4 right-4 text-gray-400 hover:text-white'
+        >
+          <X size={24} />
+        </button>
         <h2 className='text-2xl font-bold mb-6 text-center'>
           Sign in to your account
         </h2>
@@ -161,7 +176,7 @@ const LoginModal: React.FC = () => {
           </div>
         </div> */}
           <Button type='submit' className='w-full' disabled={loading}>
-            {loading ? <Spinner /> : null}
+            {loading ? <Spinner color='#ffffff' size={8} /> : null}
             Sign in
           </Button>
         </form>
