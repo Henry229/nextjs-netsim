@@ -32,7 +32,7 @@ export const changeJasperStatus = async (
 
 export const searchJasperDeviceByIccid = async (iccid: string) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/jasper/devices/`, {
+    const response = await axios.get(`${API_BASE_URL}/api/jasper`, {
       params: { iccid },
     });
     return response.data;
