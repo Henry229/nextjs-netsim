@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { IoIosFlash, IoIosFlashOff } from 'react-icons/io';
+import { X } from 'lucide-react';
 import Pagination from './pagination';
 import { useToast } from '@/components/ui/use-toast';
 import { changeKoreDeviceStatus, searchKoreDeviceByIccid } from '@/lib/kore';
@@ -85,26 +86,37 @@ export default function KoreTable({ initialDevices }: KoreTableProps) {
     [toast]
   );
 
-  const handleSearch = useCallback(async () => {
-    if (!searchIccid.trim()) {
-      toast({
-        title: 'Error',
-        description: 'Please enter ICCID to search',
-        variant: 'destructive',
-      });
-      return;
-    }
+  const handleSearch = useCallback(
+    async (e?: FormEvent) => {
+      if (e) e.preventDefault();
 
-    const searchResults = await searchKoreDeviceByIccid(searchIccid);
-    setFilteredDevices(searchResults);
-    if (searchResults.length === 0) {
-      toast({
-        title: 'Not Found',
-        description: 'No device found with the given ICCID',
-        variant: 'destructive',
-      });
-    }
-  }, [searchIccid, toast]);
+      if (!searchIccid.trim()) {
+        toast({
+          title: 'Error',
+          description: 'Please enter ICCID to search',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const searchResults = await searchKoreDeviceByIccid(searchIccid);
+      setFilteredDevices(searchResults);
+      if (searchResults.length === 0) {
+        toast({
+          title: 'Not Found',
+          description: 'No device found with the given ICCID',
+          variant: 'destructive',
+        });
+      }
+    },
+    [searchIccid, toast]
+  );
+
+  const handleClearSearch = useCallback(() => {
+    setSearchIccid('');
+    setFilteredDevices(devices);
+    setCurrentPage(1);
+  }, [devices]);
 
   const handleStateChange = useCallback(
     (value: StateType) => {
@@ -127,17 +139,27 @@ export default function KoreTable({ initialDevices }: KoreTableProps) {
 
   return (
     <div>
-      {/* Search and filter UI */}
-      <div className='flex mb-4 gap-2'>
-        <Input
-          type='text'
-          placeholder='Search by ICCID'
-          value={searchIccid}
-          onChange={(e) => setSearchIccid(e.target.value)}
-          className='flex-grow'
-        />
-        <Button onClick={handleSearch}>Search</Button>
-      </div>
+      <form onSubmit={handleSearch} className='flex mb-4 gap-2'>
+        <div className='relative flex-grow'>
+          <Input
+            type='text'
+            placeholder='Search by ICCID'
+            value={searchIccid}
+            onChange={(e) => setSearchIccid(e.target.value)}
+            className='pr-8'
+          />
+          {searchIccid && (
+            <button
+              type='button'
+              onClick={handleClearSearch}
+              className='absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700'
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+        <Button type='submit'>Search</Button>
+      </form>
       <Select onValueChange={handleStateChange}>
         <SelectTrigger className='w-[180px] mb-4'>
           <SelectValue placeholder='Filter by state' />
@@ -152,7 +174,6 @@ export default function KoreTable({ initialDevices }: KoreTableProps) {
         </SelectContent>
       </Select>
 
-      {/* Table UI */}
       <Table>
         <TableHeader>
           <TableRow>

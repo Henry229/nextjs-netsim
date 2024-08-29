@@ -1,7 +1,6 @@
-// src/components/KoreTable.tsx
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback, FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -20,178 +19,121 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { IoIosFlash, IoIosFlashOff } from 'react-icons/io';
+import { X } from 'lucide-react';
 import Pagination from './pagination';
-import { SyncLoader } from 'react-spinners';
 import { useToast } from '@/components/ui/use-toast';
+import {
+  changeJasperDeviceStatus,
+  searchJasperDeviceByIccid,
+} from '@/lib/jasper';
 
-interface KoreDevice {
+interface JasperDevice {
   iccid: string;
-  subscription_id: string;
-  state: string;
+  status: string | null;
+  imei: string | null;
   msisdn: string | null;
-  imsi: string | null;
-  data_usage?: number;
-  // Add other fields as needed
+  modemId: string | null;
+  ratePlan: string | null;
+  communicationPlan: string | null;
+  customer: string | null;
+  ctdDataUsage: number | null;
 }
 
-const STATES = [
-  'Stock',
-  'Active',
-  'Suspend',
-  'Suspend With Charge',
-  'Deactivated',
-  'Pending Scrap',
-  'Scrapped',
-  'Barred',
+const STATUS = [
+  'ACTIVATED',
+  'ACTIVATION_READY',
+  'DEACTIVATED',
+  'INVENTORY',
+  'PURGED',
+  'REPLACED',
+  'RETIRED',
+  'TEST_READY',
 ] as const;
 
-type StateType = (typeof STATES)[number] | 'all';
+type StatusType = (typeof STATUS)[number] | 'all';
 
 const ITEMS_PER_PAGE = 10;
-const ACCOUNT_ID = process.env.NEXT_PUBLIC_KORE_ACCOUNT_ID || 'cmp-pp-org-4611';
 
-export default function KoreTable() {
-  const [koreDevices, setKoreDevices] = useState<KoreDevice[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [filteredDevices, setFilteredDevices] = useState<KoreDevice[]>([]);
+interface JasperTableProps {
+  initialDevices: JasperDevice[];
+}
+
+export default function JasperTable({ initialDevices }: JasperTableProps) {
+  const [devices, setDevices] = useState(initialDevices);
+  const [filteredDevices, setFilteredDevices] = useState(initialDevices);
   const [searchIccid, setSearchIccid] = useState('');
-  const [searchResult, setSearchResult] = useState<KoreDevice | null>(null);
-  const [selectedState, setSelectedState] = useState<StateType>('all');
+  const [selectedStatus, setSelectedStatus] = useState<StatusType>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
 
-  const fetchDevices = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/kore');
-      if (!response.ok) {
-        throw new Error('Failed to fetch devices');
-      }
-      const data = await response.json();
-      if (Array.isArray(data.simCards)) {
-        setKoreDevices(data.simCards);
-        setFilteredDevices(data.simCards);
-      } else {
-        throw new Error('Invalid data format');
-      }
-    } catch (err) {
-      setError('Error fetching devices');
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch devices. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [toast]);
-
-  useEffect(() => {
-    fetchDevices();
-  }, [fetchDevices]);
-
-  useEffect(() => {
-    let result = koreDevices;
-    if (selectedState !== 'all') {
-      result = result.filter((device) => device.state === selectedState);
-    }
-    if (searchResult) {
-      result = [searchResult];
-    }
-    setFilteredDevices(result);
-    setCurrentPage(1);
-  }, [koreDevices, selectedState, searchResult]);
-
-  const changeStatus = async (
-    subscriptionId: string,
-    newStatus: 'active' | 'deactivated'
-  ) => {
-    try {
-      const response = await fetch('/api/kore', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          accountId: ACCOUNT_ID,
-          subscriptionId,
-          status: newStatus,
-        }),
-      });
-      if (!response.ok) {
-        throw new Error('Failed to change SIM status');
-      }
-      const result = await response.json();
+  const handleChangeStatus = useCallback(
+    async (iccid: string, newStatus: 'ACTIVATED' | 'DEACTIVATED') => {
+      const result = await changeJasperDeviceStatus(iccid, newStatus);
       if (result.success) {
+        setDevices((prevDevices) =>
+          prevDevices.map((device) =>
+            device.iccid === iccid ? { ...device, status: newStatus } : device
+          )
+        );
         toast({
           title: 'Success',
-          description: result.message,
+          description: `Device status changed to ${newStatus}`,
         });
-        fetchDevices();
       } else {
-        throw new Error(result.message || 'Failed to change SIM status');
+        toast({
+          title: 'Error',
+          description: 'Failed to change device status',
+          variant: 'destructive',
+        });
       }
-    } catch (err) {
-      console.error('Error changing device status:', err);
-      toast({
-        title: 'Error',
-        description: 'Failed to change device status. Please try again.',
-        variant: 'destructive',
-      });
-    }
-  };
+    },
+    [toast]
+  );
 
-  const handleSearch = async () => {
-    if (!searchIccid.trim()) {
-      toast({
-        title: 'Error',
-        description: 'Please enter ICCID to search',
-        variant: 'destructive',
-      });
-      return;
-    }
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/kore?iccid=${searchIccid}`);
-      if (!response.ok) {
-        throw new Error('Failed to search device');
+  const handleSearch = useCallback(
+    async (e?: FormEvent) => {
+      if (e) e.preventDefault();
+
+      if (!searchIccid.trim()) {
+        toast({
+          title: 'Error',
+          description: 'Please enter ICCID to search',
+          variant: 'destructive',
+        });
+        return;
       }
-      const data = await response.json();
-      if (data.simCards && data.simCards.length > 0) {
-        setSearchResult(data.simCards[0]);
-        setFilteredDevices(data.simCards);
-        setError(null);
-      } else {
-        setSearchResult(null);
-        setFilteredDevices([]);
+
+      const searchResults = await searchJasperDeviceByIccid(searchIccid);
+      setFilteredDevices(searchResults);
+      if (searchResults.length === 0) {
         toast({
           title: 'Not Found',
           description: 'No device found with the given ICCID',
           variant: 'destructive',
         });
       }
-    } catch (err) {
-      setError('Error searching device by ICCID');
-      toast({
-        title: 'Error',
-        description: 'Failed to search device. Please try again.',
-        variant: 'destructive',
-      });
-      setSearchResult(null);
-      setFilteredDevices([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [searchIccid, toast]
+  );
 
-  const clearSearch = () => {
+  const handleClearSearch = useCallback(() => {
     setSearchIccid('');
-    setSearchResult(null);
-    setError(null);
-    setFilteredDevices(koreDevices);
+    setFilteredDevices(devices);
     setCurrentPage(1);
-  };
+  }, [devices]);
+
+  const handleStatusChange = useCallback(
+    (value: StatusType) => {
+      setSelectedStatus(value);
+      if (value === 'all') {
+        setFilteredDevices(devices);
+      } else {
+        setFilteredDevices(devices.filter((device) => device.status === value));
+      }
+      setCurrentPage(1);
+    },
+    [devices]
+  );
 
   const totalPages = Math.ceil(filteredDevices.length / ITEMS_PER_PAGE);
   const paginatedDevices = filteredDevices.slice(
@@ -199,15 +141,99 @@ export default function KoreTable() {
     currentPage * ITEMS_PER_PAGE
   );
 
-  if (loading) {
-    return (
-      <div className='flex justify-center items-center h-screen'>
-        <SyncLoader color='#36D7B7' />
-      </div>
-    );
-  }
+  return (
+    <div>
+      <form onSubmit={handleSearch} className='flex mb-4 gap-2'>
+        <div className='relative flex-grow'>
+          <Input
+            type='text'
+            placeholder='Search by ICCID'
+            value={searchIccid}
+            onChange={(e) => setSearchIccid(e.target.value)}
+            className='pr-8'
+          />
+          {searchIccid && (
+            <button
+              type='button'
+              onClick={handleClearSearch}
+              className='absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700'
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+        <Button type='submit'>Search</Button>
+      </form>
+      <Select onValueChange={handleStatusChange}>
+        <SelectTrigger className='w-[180px] mb-4'>
+          <SelectValue placeholder='Filter by status' />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value='all'>All Status</SelectItem>
+          {STATUS.map((status) => (
+            <SelectItem key={status} value={status}>
+              {status}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
-  if (error) return <div>{error}</div>;
-
-  return <div>{/* ... (rest of the component remains the same) ... */}</div>;
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>ICCID</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>IMEI</TableHead>
+            <TableHead>MSISDN</TableHead>
+            <TableHead>Rate Plan</TableHead>
+            <TableHead>Communication Plan</TableHead>
+            <TableHead>Customer</TableHead>
+            <TableHead>Data Usage</TableHead>
+            <TableHead>Action</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {paginatedDevices.map((device) => (
+            <TableRow key={device.iccid}>
+              <TableCell>{device.iccid}</TableCell>
+              <TableCell>{device.status}</TableCell>
+              <TableCell>{device.imei || 'N/A'}</TableCell>
+              <TableCell>{device.msisdn || 'N/A'}</TableCell>
+              <TableCell>{device.ratePlan || 'N/A'}</TableCell>
+              <TableCell>{device.communicationPlan || 'N/A'}</TableCell>
+              <TableCell>{device.customer || 'N/A'}</TableCell>
+              <TableCell>
+                {device.ctdDataUsage
+                  ? `${(device.ctdDataUsage / 1000000).toFixed(2)} MB`
+                  : 'N/A'}
+              </TableCell>
+              <TableCell>
+                <Button
+                  className='bg-indigo-800 text-white hover:bg-indigo-950 p-0.5 mr-1 h-6 w-6'
+                  onClick={() => handleChangeStatus(device.iccid, 'ACTIVATED')}
+                  disabled={device.status === 'ACTIVATED'}
+                >
+                  <IoIosFlash />
+                </Button>
+                <Button
+                  className='bg-rose-600 text-white hover:bg-rose-900 p-0.5 mr-1 h-6 w-6'
+                  onClick={() =>
+                    handleChangeStatus(device.iccid, 'DEACTIVATED')
+                  }
+                  disabled={device.status === 'DEACTIVATED'}
+                >
+                  <IoIosFlashOff />
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
+    </div>
+  );
 }

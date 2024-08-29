@@ -1,3 +1,5 @@
+'use server';
+
 import { koreService } from '@/services/koreService';
 import { revalidatePath } from 'next/cache';
 
@@ -10,15 +12,13 @@ export async function changeKoreDeviceStatus(
   subscriptionId: string,
   status: 'active' | 'deactivated'
 ) {
-  'use server';
-
   try {
     await koreService.changeSimStatus(
       'cmp-pp-org-4611',
       subscriptionId,
       status
     );
-    revalidatePath('/kore-devices');
+    revalidatePath('/sim-management/kore-devices');
     return { success: true };
   } catch (error) {
     console.error('Error changing Kore device status:', error);
@@ -27,8 +27,6 @@ export async function changeKoreDeviceStatus(
 }
 
 export async function searchKoreDeviceByIccid(iccid: string) {
-  'use server';
-
   try {
     const result = await koreService.searchSimByIccid(iccid);
     return result.simCards;
