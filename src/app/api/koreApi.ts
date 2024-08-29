@@ -1,55 +1,42 @@
-// src/app/api/kore/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+// src/app/api/koreApi.ts
+import axios from 'axios';
 
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const iccid = searchParams.get('iccid');
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
+export const getAllKoreDevices = async () => {
   try {
-    if (iccid) {
-      const device = await prisma.netKoreDevices.findUnique({
-        where: { iccid },
-      });
-      return NextResponse.json({ simCards: device ? [device] : [] });
-    } else {
-      const devices = await prisma.netKoreDevices.findMany({
-        orderBy: { created_at: 'desc' },
-      });
-      return NextResponse.json({ simCards: devices });
-    }
+    const response = await axios.get(`${API_BASE_URL}/api/kore`);
+    return response.data;
   } catch (error) {
     console.error('Error fetching Kore devices:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    throw error;
   }
-}
+};
 
-export async function PUT(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const subscription_id = searchParams.get('subscription_id');
-  const { state } = await req.json();
-
-  if (!subscription_id) {
-    return NextResponse.json(
-      { error: 'Subscription ID is required' },
-      { status: 400 }
-    );
-  }
-
+export const changeKoreDeviceStatus = async (
+  subscriptionId: string,
+  state: string
+) => {
   try {
-    const updatedDevice = await prisma.netKoreDevices.update({
-      where: { subscription_id },
-      data: { state },
-    });
-    return NextResponse.json(updatedDevice);
-  } catch (error) {
-    console.error('Error updating Kore device status:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+    const response = await axios.put(
+      `${API_BASE_URL}/api/kore?subscription_id=${subscriptionId}`,
+      { state }
     );
+    return response.data;
+  } catch (error) {
+    console.error('Error changing Kore device status:', error);
+    throw error;
   }
-}
+};
+
+export const searchKoreDeviceByIccid = async (iccid: string) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/kore`, {
+      params: { iccid },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error searching Kore device:', error);
+    throw error;
+  }
+};

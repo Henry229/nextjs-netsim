@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   getAllJasper,
   changeJasperStatus,
@@ -69,23 +69,7 @@ export default function JasperTable() {
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchDevices();
-  }, []);
-
-  useEffect(() => {
-    let result = jasperDevices;
-    if (selectedState !== 'all') {
-      result = result.filter((device) => device.status === selectedState);
-    }
-    if (searchResult) {
-      result = [searchResult];
-    }
-    setFilteredDevices(result);
-    setCurrentPage(1);
-  }, [jasperDevices, selectedState, searchResult]);
-
-  const fetchDevices = async () => {
+  const fetchDevices = useCallback(async () => {
     try {
       const fetchedDevices = await getAllJasper();
       if (Array.isArray(fetchedDevices.simCards)) {
@@ -107,7 +91,23 @@ export default function JasperTable() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchDevices();
+  }, [fetchDevices]);
+
+  useEffect(() => {
+    let result = jasperDevices;
+    if (selectedState !== 'all') {
+      result = result.filter((device) => device.status === selectedState);
+    }
+    if (searchResult) {
+      result = [searchResult];
+    }
+    setFilteredDevices(result);
+    setCurrentPage(1);
+  }, [jasperDevices, selectedState, searchResult]);
 
   const changeStatus = async (
     iccid: string,

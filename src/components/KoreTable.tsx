@@ -1,7 +1,7 @@
 // src/components/KoreTable.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -64,23 +64,7 @@ export default function KoreTable() {
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchDevices();
-  }, []);
-
-  useEffect(() => {
-    let result = koreDevices;
-    if (selectedState !== 'all') {
-      result = result.filter((device) => device.state === selectedState);
-    }
-    if (searchResult) {
-      result = [searchResult];
-    }
-    setFilteredDevices(result);
-    setCurrentPage(1);
-  }, [koreDevices, selectedState, searchResult]);
-
-  const fetchDevices = async () => {
+  const fetchDevices = useCallback(async () => {
     setLoading(true);
     try {
       const fetchedDevices = await getAllKoreDevices();
@@ -100,7 +84,23 @@ export default function KoreTable() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchDevices();
+  }, [fetchDevices]);
+
+  useEffect(() => {
+    let result = koreDevices;
+    if (selectedState !== 'all') {
+      result = result.filter((device) => device.state === selectedState);
+    }
+    if (searchResult) {
+      result = [searchResult];
+    }
+    setFilteredDevices(result);
+    setCurrentPage(1);
+  }, [koreDevices, selectedState, searchResult]);
 
   const changeStatus = async (
     subscriptionId: string,
