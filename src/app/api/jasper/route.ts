@@ -1,50 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { koreService } from '@/services/koreService';
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
+  const searchParams = req.nextUrl.searchParams;
   const iccid = searchParams.get('iccid');
 
   try {
     if (iccid) {
-      const device = await prisma.netJasperDevices.findUnique({
-        where: { iccid },
-      });
-      return NextResponse.json({ simCards: device ? [device] : [] });
+      const result = await koreService.searchSimByIccid(iccid);
+      return NextResponse.json(result);
     } else {
-      const devices = await prisma.netJasperDevices.findMany({
-        orderBy: { createdAt: 'desc' },
-      });
-      return NextResponse.json({ simCards: devices });
+      const result = await koreService.getCustomerSimCards();
+      return NextResponse.json(result);
     }
   } catch (error) {
-    console.error('Error fetching Jasper devices:', error);
+    console.error('Error in Kore API route:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal Server Error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const { accountId, subscriptionId, status, imei } = await req.json();
+    const result = await koreService.changeSimStatus(
+      accountId,
+      subscriptionId,
+      status,
+      imei
+    );
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error('Error in Kore API route:', error);
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
       { status: 500 }
     );
   }
 }
 
 export async function PUT(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const iccid = searchParams.get('iccid');
-  const { status } = await req.json();
-
-  if (!iccid) {
-    return NextResponse.json({ error: 'ICCID is required' }, { status: 400 });
-  }
-
   try {
-    const updatedDevice = await prisma.netJasperDevices.update({
-      where: { iccid },
-      data: { status },
-    });
-    return NextResponse.json(updatedDevice);
+    const result = await koreService.getStatusCounts();
+    return NextResponse.json(result);
   } catch (error) {
-    console.error('Error updating Jasper device status:', error);
+    console.error('Error in Kore API route:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal Server Error' },
       { status: 500 }
     );
   }

@@ -21,13 +21,10 @@ import {
 } from '@/components/ui/select';
 import { IoIosFlash, IoIosFlashOff } from 'react-icons/io';
 import Pagination from './pagination';
-import {
-  getAllKoreDevices,
-  changeKoreDeviceStatus,
-  searchKoreDeviceByIccid,
-} from '@/app/api/koreApi';
 import { SyncLoader } from 'react-spinners';
 import { useToast } from '@/components/ui/use-toast';
+import { koreService } from '@/services/koreService';
+// import { koreService } from '@/app/api/koreService';
 
 interface KoreDevice {
   iccid: string;
@@ -52,6 +49,7 @@ const STATES = [
 type StateType = (typeof STATES)[number] | 'all';
 
 const ITEMS_PER_PAGE = 10;
+const ACCOUNT_ID = process.env.NEXT_PUBLIC_KORE_ACCOUNT_ID || 'cmp-pp-org-4611';
 
 export default function KoreTable() {
   const [koreDevices, setKoreDevices] = useState<KoreDevice[]>([]);
@@ -67,7 +65,7 @@ export default function KoreTable() {
   const fetchDevices = useCallback(async () => {
     setLoading(true);
     try {
-      const fetchedDevices = await getAllKoreDevices();
+      const fetchedDevices = await koreService.getCustomerSimCards();
       if (Array.isArray(fetchedDevices.simCards)) {
         setKoreDevices(fetchedDevices.simCards);
         setFilteredDevices(fetchedDevices.simCards);
@@ -107,14 +105,22 @@ export default function KoreTable() {
     newStatus: 'active' | 'deactivated'
   ) => {
     try {
-      await changeKoreDeviceStatus(subscriptionId, newStatus);
-      fetchDevices();
-      toast({
-        title: 'Success',
-        description: `Device status changed to ${newStatus}`,
-      });
+      const result = await koreService.changeSimStatus(
+        ACCOUNT_ID,
+        subscriptionId,
+        newStatus
+      );
+      if (result.success) {
+        toast({
+          title: 'Success',
+          description: result.message,
+        });
+        fetchDevices();
+      } else {
+        throw new Error(result.message || 'Failed to change SIM status');
+      }
     } catch (err) {
-      setError('Error changing device status');
+      console.error('Error changing device status:', err);
       toast({
         title: 'Error',
         description: 'Failed to change device status. Please try again.',
@@ -134,10 +140,10 @@ export default function KoreTable() {
     }
     setLoading(true);
     try {
-      const response = await searchKoreDeviceByIccid(searchIccid);
+      const response = await koreService.searchSimByIccid(searchIccid);
       if (response.simCards && response.simCards.length > 0) {
         setSearchResult(response.simCards[0]);
-        setFilteredDevices([response.simCards[0]]);
+        setFilteredDevices(response.simCards);
         setError(null);
       } else {
         setSearchResult(null);

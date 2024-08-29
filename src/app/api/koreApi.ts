@@ -2,10 +2,13 @@
 import axios from 'axios';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const ACCOUNT_ID = 'cmp-pp-org-4611';
 
 export const getAllKoreDevices = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/kore`);
+    const response = await axios.get(
+      `${API_BASE_URL}/api/kore/${ACCOUNT_ID}/subscriptions`
+    );
     return response.data;
   } catch (error) {
     console.error('Error fetching Kore devices:', error);
@@ -15,12 +18,15 @@ export const getAllKoreDevices = async () => {
 
 export const changeKoreDeviceStatus = async (
   subscriptionId: string,
-  state: string
+  status: 'active' | 'deactivated'
 ) => {
   try {
-    const response = await axios.put(
-      `${API_BASE_URL}/api/kore?subscription_id=${subscriptionId}`,
-      { state }
+    const response = await axios.post(
+      `${API_BASE_URL}/api/kore/${ACCOUNT_ID}/change-sim-status`,
+      {
+        subscriptionId,
+        status,
+      }
     );
     return response.data;
   } catch (error) {
@@ -31,9 +37,12 @@ export const changeKoreDeviceStatus = async (
 
 export const searchKoreDeviceByIccid = async (iccid: string) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/kore`, {
-      params: { iccid },
-    });
+    const response = await axios.get(
+      `${API_BASE_URL}/api/kore/${ACCOUNT_ID}/subscriptions`,
+      {
+        params: { iccid },
+      }
+    );
     return response.data;
   } catch (error) {
     console.error('Error searching Kore device:', error);

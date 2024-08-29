@@ -1,54 +1,54 @@
-// src/app/api/kore/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { koreService } from '@/services/koreService';
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
+  const searchParams = req.nextUrl.searchParams;
   const iccid = searchParams.get('iccid');
 
   try {
     if (iccid) {
-      const device = await prisma.netKoreDevices.findUnique({
-        where: { iccid },
-      });
-      return NextResponse.json({ simCards: device ? [device] : [] });
+      const result = await koreService.searchSimByIccid(iccid);
+      return NextResponse.json(result);
     } else {
-      const devices = await prisma.netKoreDevices.findMany({
-        orderBy: { created_at: 'desc' },
-      });
-      return NextResponse.json({ simCards: devices });
+      const result = await koreService.getCustomerSimCards();
+      return NextResponse.json(result);
     }
   } catch (error) {
-    console.error('Error fetching Kore devices:', error);
+    console.error('Error in Kore API route:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal Server Error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const { accountId, subscriptionId, status, imei } = await req.json();
+    const result = await koreService.changeSimStatus(
+      accountId,
+      subscriptionId,
+      status,
+      imei
+    );
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error('Error in Kore API route:', error);
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
       { status: 500 }
     );
   }
 }
 
 export async function PUT(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const subscription_id = searchParams.get('subscription_id');
-  const { state } = await req.json();
-
-  if (!subscription_id) {
-    return NextResponse.json(
-      { error: 'Subscription ID is required' },
-      { status: 400 }
-    );
-  }
-
   try {
-    const updatedDevice = await prisma.netKoreDevices.update({
-      where: { subscription_id },
-      data: { state },
-    });
-    return NextResponse.json(updatedDevice);
+    const result = await koreService.getStatusCounts();
+    return NextResponse.json(result);
   } catch (error) {
-    console.error('Error updating Kore device status:', error);
+    console.error('Error in Kore API route:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal Server Error' },
       { status: 500 }
     );
   }
