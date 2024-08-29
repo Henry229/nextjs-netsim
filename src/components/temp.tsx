@@ -1,0 +1,213 @@
+// src/components/KoreTable.tsx
+'use client';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { IoIosFlash, IoIosFlashOff } from 'react-icons/io';
+import Pagination from './pagination';
+import { SyncLoader } from 'react-spinners';
+import { useToast } from '@/components/ui/use-toast';
+
+interface KoreDevice {
+  iccid: string;
+  subscription_id: string;
+  state: string;
+  msisdn: string | null;
+  imsi: string | null;
+  data_usage?: number;
+  // Add other fields as needed
+}
+
+const STATES = [
+  'Stock',
+  'Active',
+  'Suspend',
+  'Suspend With Charge',
+  'Deactivated',
+  'Pending Scrap',
+  'Scrapped',
+  'Barred',
+] as const;
+
+type StateType = (typeof STATES)[number] | 'all';
+
+const ITEMS_PER_PAGE = 10;
+const ACCOUNT_ID = process.env.NEXT_PUBLIC_KORE_ACCOUNT_ID || 'cmp-pp-org-4611';
+
+export default function KoreTable() {
+  const [koreDevices, setKoreDevices] = useState<KoreDevice[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [filteredDevices, setFilteredDevices] = useState<KoreDevice[]>([]);
+  const [searchIccid, setSearchIccid] = useState('');
+  const [searchResult, setSearchResult] = useState<KoreDevice | null>(null);
+  const [selectedState, setSelectedState] = useState<StateType>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const { toast } = useToast();
+
+  const fetchDevices = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/kore');
+      if (!response.ok) {
+        throw new Error('Failed to fetch devices');
+      }
+      const data = await response.json();
+      if (Array.isArray(data.simCards)) {
+        setKoreDevices(data.simCards);
+        setFilteredDevices(data.simCards);
+      } else {
+        throw new Error('Invalid data format');
+      }
+    } catch (err) {
+      setError('Error fetching devices');
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch devices. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    fetchDevices();
+  }, [fetchDevices]);
+
+  useEffect(() => {
+    let result = koreDevices;
+    if (selectedState !== 'all') {
+      result = result.filter((device) => device.state === selectedState);
+    }
+    if (searchResult) {
+      result = [searchResult];
+    }
+    setFilteredDevices(result);
+    setCurrentPage(1);
+  }, [koreDevices, selectedState, searchResult]);
+
+  const changeStatus = async (
+    subscriptionId: string,
+    newStatus: 'active' | 'deactivated'
+  ) => {
+    try {
+      const response = await fetch('/api/kore', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          accountId: ACCOUNT_ID,
+          subscriptionId,
+          status: newStatus,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to change SIM status');
+      }
+      const result = await response.json();
+      if (result.success) {
+        toast({
+          title: 'Success',
+          description: result.message,
+        });
+        fetchDevices();
+      } else {
+        throw new Error(result.message || 'Failed to change SIM status');
+      }
+    } catch (err) {
+      console.error('Error changing device status:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to change device status. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleSearch = async () => {
+    if (!searchIccid.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please enter ICCID to search',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/kore?iccid=${searchIccid}`);
+      if (!response.ok) {
+        throw new Error('Failed to search device');
+      }
+      const data = await response.json();
+      if (data.simCards && data.simCards.length > 0) {
+        setSearchResult(data.simCards[0]);
+        setFilteredDevices(data.simCards);
+        setError(null);
+      } else {
+        setSearchResult(null);
+        setFilteredDevices([]);
+        toast({
+          title: 'Not Found',
+          description: 'No device found with the given ICCID',
+          variant: 'destructive',
+        });
+      }
+    } catch (err) {
+      setError('Error searching device by ICCID');
+      toast({
+        title: 'Error',
+        description: 'Failed to search device. Please try again.',
+        variant: 'destructive',
+      });
+      setSearchResult(null);
+      setFilteredDevices([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchIccid('');
+    setSearchResult(null);
+    setError(null);
+    setFilteredDevices(koreDevices);
+    setCurrentPage(1);
+  };
+
+  const totalPages = Math.ceil(filteredDevices.length / ITEMS_PER_PAGE);
+  const paginatedDevices = filteredDevices.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  if (loading) {
+    return (
+      <div className='flex justify-center items-center h-screen'>
+        <SyncLoader color='#36D7B7' />
+      </div>
+    );
+  }
+
+  if (error) return <div>{error}</div>;
+
+  return <div>{/* ... (rest of the component remains the same) ... */}</div>;
+}

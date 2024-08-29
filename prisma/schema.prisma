@@ -53,7 +53,7 @@ model NetJasperDevices {
 
 model NetKoreDevices {
   iccid                 String   @id
-  subscription_id       String
+  subscription_id       String   @unique
   state                 String
   apn_feature           String?
   rate_plan             String?

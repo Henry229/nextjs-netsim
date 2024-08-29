@@ -23,15 +23,14 @@ import { IoIosFlash, IoIosFlashOff } from 'react-icons/io';
 import Pagination from './pagination';
 import { SyncLoader } from 'react-spinners';
 import { useToast } from '@/components/ui/use-toast';
-import { koreService } from '@/services/koreService';
 // import { koreService } from '@/app/api/koreService';
 
 interface KoreDevice {
   iccid: string;
   subscription_id: string;
   state: string;
-  msisdn: string;
-  imsi: string;
+  msisdn: string | null;
+  imsi: string | null;
   data_usage?: number;
 }
 
@@ -65,12 +64,16 @@ export default function KoreTable() {
   const fetchDevices = useCallback(async () => {
     setLoading(true);
     try {
-      const fetchedDevices = await koreService.getCustomerSimCards();
-      if (Array.isArray(fetchedDevices.simCards)) {
-        setKoreDevices(fetchedDevices.simCards);
-        setFilteredDevices(fetchedDevices.simCards);
+      const response = await fetch('/api/kore');
+      if (!response.ok) {
+        throw new Error('Failed to fetch devices');
+      }
+      const data = await response.json();
+      if (Array.isArray(data.simCards)) {
+        setKoreDevices(data.simCards);
+        setFilteredDevices(data.simCards);
       } else {
-        throw new Error('Error fetching devices');
+        throw new Error('Invalid data format');
       }
     } catch (err) {
       setError('Error fetching devices');
@@ -105,11 +108,21 @@ export default function KoreTable() {
     newStatus: 'active' | 'deactivated'
   ) => {
     try {
-      const result = await koreService.changeSimStatus(
-        ACCOUNT_ID,
-        subscriptionId,
-        newStatus
-      );
+      const response = await fetch('/api/kore', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          accountId: ACCOUNT_ID,
+          subscriptionId,
+          status: newStatus,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to change SIM status');
+      }
+      const result = await response.json();
       if (result.success) {
         toast({
           title: 'Success',
@@ -140,10 +153,14 @@ export default function KoreTable() {
     }
     setLoading(true);
     try {
-      const response = await koreService.searchSimByIccid(searchIccid);
-      if (response.simCards && response.simCards.length > 0) {
-        setSearchResult(response.simCards[0]);
-        setFilteredDevices(response.simCards);
+      const response = await fetch(`/api/kore?iccid=${searchIccid}`);
+      if (!response.ok) {
+        throw new Error('Failed to search device');
+      }
+      const data = await response.json();
+      if (data.simCards && data.simCards.length > 0) {
+        setSearchResult(data.simCards[0]);
+        setFilteredDevices(data.simCards);
         setError(null);
       } else {
         setSearchResult(null);
@@ -239,8 +256,8 @@ export default function KoreTable() {
               <TableCell>{device.iccid}</TableCell>
               <TableCell>{device.subscription_id}</TableCell>
               <TableCell>{device.state}</TableCell>
-              <TableCell>{device.msisdn}</TableCell>
-              <TableCell>{device.imsi}</TableCell>
+              <TableCell>{device.msisdn || 'N/A'}</TableCell>
+              <TableCell>{device.imsi || 'N/A'}</TableCell>
               <TableCell>
                 {device.data_usage
                   ? `${(device.data_usage / 1000000).toFixed(2)} MB`
