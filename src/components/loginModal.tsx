@@ -111,7 +111,13 @@ const LoginModal: React.FC = () => {
 
   return (
     <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4'>
-      <div className='bg-gray-800 p-8 rounded-lg shadow-lg max-w-md w-full relative'>
+      <div
+        className='p-6 rounded-lg shadow-xl dark:shadow-dark-xl max-w-md w-full 
+                      bg-white dark:bg-gray-800 
+                      text-gray-900 dark:text-gray-100
+                      border border-gray-200 dark:border-gray-700 relative'
+      >
+        {/* <div className='bg-gray-800 p-8 rounded-lg shadow-lg max-w-md w-full relative'> */}
         {/* <div className='flex flex-col justify-center items-center min-h-screen bg-background p-4'> */}
         {/* <div className='w-full max-w-md p-8 bg-background rounded-lg shadow-md'> */}
         <button

@@ -43,8 +43,14 @@ const SignUpModal: React.FC = () => {
   };
 
   return (
-    <div className='flex flex-col justify-center items-center min-h-screen bg-background p-4'>
-      <div className='w-full max-w-md bg-background p-8 rounded-lg shadow-md'>
+    <div className='fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50 p-4'>
+      <div
+        className='p-6 rounded-lg shadow-xl dark:shadow-dark-xl max-w-md w-full 
+                      bg-white dark:bg-gray-800 
+                      text-gray-900 dark:text-gray-100
+                      border border-gray-200 dark:border-gray-700 relative'
+      >
+        {/* <div className='w-full max-w-md bg-background p-8 rounded-lg shadow-md'> */}
         <h2 className='text-2xl font-bold mb-6 text-center'>
           Create a new account
         </h2>

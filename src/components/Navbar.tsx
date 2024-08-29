@@ -110,13 +110,14 @@ export default function Navbar() {
         <ThemeToggle />
       </div>
       {isLoginModalOpen && (
-        <LoginModal
-          onClose={() => setIsLoginModalOpen(false)}
-          onSignUpClick={() => {
-            setIsLoginModalOpen(false);
-            router.push('/signup');
-          }}
-        />
+        <LoginModal />
+        // <LoginModal
+        //   onClose={() => setIsLoginModalOpen(false)}
+        //   onSignUpClick={() => {
+        //     setIsLoginModalOpen(false);
+        //     router.push('/signup');
+        //   }}
+        // />
       )}
     </nav>
   );
