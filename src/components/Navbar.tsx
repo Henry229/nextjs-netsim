@@ -66,11 +66,30 @@ export default function Navbar() {
         {session ? (
           <div className='flex items-center space-x-4'>
             {isAdmin && (
-              <Link href='/users'>
-                <Button variant='ghost' className='p-2'>
-                  <BiEdit className='h-5 w-5' />
-                </Button>
-              </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant='ghost' className='p-2'>
+                    <BiEdit className='h-5 w-5' />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align='end'>
+                  <DropdownMenuItem
+                    onClick={() => router.push('/admin/permissions')}
+                  >
+                    Permission
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => router.push('/admin/password')}
+                  >
+                    Password
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              // <Link href='/users'>
+              //   <Button variant='ghost' className='p-2'>
+              //     <BiEdit className='h-5 w-5' />
+              //   </Button>
+              // </Link>
             )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

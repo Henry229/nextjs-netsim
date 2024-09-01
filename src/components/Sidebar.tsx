@@ -115,7 +115,8 @@ function Sidebar({ isFixed, setIsFixed }: SidebarProps): JSX.Element {
         <ul className='space-y-2 p-4'>
           <li>
             <Link
-              href='/dashboard'
+              href='#'
+              // href='/dashboard'
               className='flex hover:bg-accent hover:text-accent-foreground p-2 rounded items-center'
             >
               <AiOutlineDashboard className='mr-2' />
@@ -124,7 +125,8 @@ function Sidebar({ isFixed, setIsFixed }: SidebarProps): JSX.Element {
           </li>
           <li>
             <Link
-              href='/alerts'
+              href='#'
+              // href='/alerts'
               className='flex hover:bg-accent hover:text-accent-foreground p-2 rounded items-center'
             >
               <FiAlertTriangle className='mr-2' />
@@ -133,7 +135,8 @@ function Sidebar({ isFixed, setIsFixed }: SidebarProps): JSX.Element {
           </li>
           <li>
             <Link
-              href='/customer'
+              href='#'
+              // href='/customer'
               className='flex hover:bg-accent hover:text-accent-foreground p-2 rounded items-center'
             >
               <FaRegUser className='mr-2' />
@@ -148,13 +151,13 @@ function Sidebar({ isFixed, setIsFixed }: SidebarProps): JSX.Element {
                   SIM Management
                 </AccordionTrigger>
                 <AccordionContent>
-                  <Link
+                  {/* <Link
                     href='/sim-management/get-all-sims'
                     className='block hover:bg-accent hover:text-accent-foreground p-2 rounded ml-4'
                     // onClick={handleGetAllSims}
                   >
                     Get all SIMs
-                  </Link>
+                  </Link> */}
                   <Link
                     href='/sim-management/jasper-devices'
                     className='block hover:bg-accent hover:text-accent-foreground p-2 rounded ml-4'
