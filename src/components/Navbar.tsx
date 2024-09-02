@@ -18,12 +18,15 @@ import { BiEdit } from 'react-icons/bi';
 import { useToast } from '@/components/ui/use-toast';
 import LoginModal from './loginModal';
 import { Spinner } from './ui/spinner';
+import { ChangePasswordModal } from './ChangePasswordModal';
 
 export default function Navbar() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const { toast } = useToast();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] =
+    useState(false);
 
   const handleSignOut = async () => {
     const result = await signOut({ redirect: false, callbackUrl: '/' });
@@ -37,7 +40,7 @@ export default function Navbar() {
   const isAdmin = session?.user?.role === 'admin';
 
   const handleEditClick = () => {
-    router.push('/admin');
+    setIsChangePasswordModalOpen(true);
   };
 
   if (status === 'loading') {
@@ -78,18 +81,11 @@ export default function Navbar() {
                   >
                     Permission
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => router.push('/admin/password')}
-                  >
+                  <DropdownMenuItem onClick={handleEditClick}>
                     Password
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              // <Link href='/users'>
-              //   <Button variant='ghost' className='p-2'>
-              //     <BiEdit className='h-5 w-5' />
-              //   </Button>
-              // </Link>
             )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -128,16 +124,11 @@ export default function Navbar() {
         )}
         <ThemeToggle />
       </div>
-      {isLoginModalOpen && (
-        <LoginModal />
-        // <LoginModal
-        //   onClose={() => setIsLoginModalOpen(false)}
-        //   onSignUpClick={() => {
-        //     setIsLoginModalOpen(false);
-        //     router.push('/signup');
-        //   }}
-        // />
-      )}
+      {isLoginModalOpen && <LoginModal />}
+      <ChangePasswordModal
+        isOpen={isChangePasswordModalOpen}
+        onClose={() => setIsChangePasswordModalOpen(false)}
+      />
     </nav>
   );
 }

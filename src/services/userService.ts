@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma';
+import bcrypt from 'bcrypt';
 
 export const userService = {
   getAllUsers: async () => {
@@ -65,6 +66,20 @@ export const userService = {
       });
     } catch (error) {
       console.error('Error in deleteUser service:', error);
+      throw error;
+    }
+  },
+
+  changePassword: async (userId: number, newPassword: string) => {
+    try {
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      await prisma.simUser.update({
+        where: { id: userId },
+        data: { password: hashedPassword },
+      });
+      return { success: true };
+    } catch (error) {
+      console.error('Error in changePassword service:', error);
       throw error;
     }
   },
