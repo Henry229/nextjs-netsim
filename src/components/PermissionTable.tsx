@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { deleteUser, getAllUsers, updateUser } from '@/app/api/userAPi';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Table,
   TableBody,
@@ -21,10 +20,20 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useToast } from '@/components/ui/use-toast';
+import { getAllUsers, updateUser, deleteUser } from '@/lib/userPermission';
+import { Spinner } from '@/components/ui/spinner';
 
 interface User {
   id: number;
-  name: string;
+  name: string | null;
   email: string;
   role: string;
 }
@@ -32,25 +41,29 @@ interface User {
 export default function PermissionTable() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const { toast } = useToast();
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       const fetchedUsers = await getAllUsers();
       setUsers(fetchedUsers);
       setLoading(false);
     } catch (err) {
       console.error('Error fetching users:', err);
-      setError('Failed to fetch users');
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch users',
+        variant: 'destructive',
+      });
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const handleEdit = (user: User) => {
     setEditingUser(user);
@@ -60,11 +73,23 @@ export default function PermissionTable() {
   const handleDelete = async (id: number) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
       try {
-        await deleteUser(id);
-        setUsers(users.filter((user) => user.id !== id));
+        const result = await deleteUser(id);
+        if (result.success) {
+          setUsers(users.filter((user) => user.id !== id));
+          toast({
+            title: 'Success',
+            description: 'User deleted successfully',
+          });
+        } else {
+          throw new Error(result.error);
+        }
       } catch (err) {
         console.error('Error deleting user:', err);
-        setError('Failed to delete user');
+        toast({
+          title: 'Error',
+          description: 'Failed to delete user',
+          variant: 'destructive',
+        });
       }
     }
   };
@@ -72,20 +97,42 @@ export default function PermissionTable() {
   const handleUpdate = async () => {
     if (editingUser) {
       try {
-        await updateUser(editingUser.id, editingUser);
-        setUsers(
-          users.map((user) => (user.id === editingUser.id ? editingUser : user))
-        );
-        setIsEditDialogOpen(false);
+        const result = await updateUser(editingUser.id, {
+          name: editingUser.name,
+          email: editingUser.email,
+          roleId: editingUser.role === 'admin' ? 1 : 2, // Assuming 1 for admin, 2 for readonly
+        });
+        if (result.success) {
+          setUsers(
+            users.map((user) =>
+              user.id === editingUser.id ? editingUser : user
+            )
+          );
+          setIsEditDialogOpen(false);
+          toast({
+            title: 'Success',
+            description: 'User updated successfully',
+          });
+        } else {
+          throw new Error(result.error);
+        }
       } catch (err) {
         console.error('Error updating user:', err);
-        setError('Failed to update user');
+        toast({
+          title: 'Error',
+          description: 'Failed to update user',
+          variant: 'destructive',
+        });
       }
     }
   };
 
-  if (loading) return <div>Loading users...</div>;
-  if (error) return <div>Error: {error}</div>;
+  if (loading)
+    return (
+      <div className='flex justify-center items-center h-screen'>
+        <Spinner />
+      </div>
+    );
 
   return (
     <>
@@ -139,9 +186,12 @@ export default function PermissionTable() {
                 </label>
                 <Input
                   id='name'
-                  value={editingUser.name}
+                  value={editingUser.name ?? ''}
                   onChange={(e) =>
-                    setEditingUser({ ...editingUser, name: e.target.value })
+                    setEditingUser({
+                      ...editingUser,
+                      name: e.target.value || null,
+                    })
                   }
                 />
               </div>
@@ -161,13 +211,20 @@ export default function PermissionTable() {
                 <label htmlFor='role' className='text-sm font-medium'>
                   Role
                 </label>
-                <Input
-                  id='role'
+                <Select
                   value={editingUser.role}
-                  onChange={(e) =>
-                    setEditingUser({ ...editingUser, role: e.target.value })
+                  onValueChange={(value) =>
+                    setEditingUser({ ...editingUser, role: value })
                   }
-                />
+                >
+                  <SelectTrigger className='w-full'>
+                    <SelectValue placeholder='Select a role' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='readonly'>Readonly</SelectItem>
+                    <SelectItem value='admin'>Admin</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           )}
