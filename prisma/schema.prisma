@@ -64,7 +64,7 @@ model NetKoreDevices {
   imsi                  String?
   imei                  String?
   product_offer         String?
-  stock_order_request_id String?
+  provisioning_request_id String?
   rsp_state             String?
   product_offer_type    String?
   serial                String?
