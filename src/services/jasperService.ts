@@ -57,14 +57,14 @@ export const jasperService = {
       });
 
       const result = {
-        ACTIVATED: 0,
-        DEACTIVATED: 0,
-        INVENTORY: 0,
-        PURGED: 0,
-        REPLACED: 0,
-        RETIRED: 0,
-        TEST_READY: 0,
-        UNKNOWN: 0,
+        Activated: 0,
+        Deactivated: 0,
+        Inventory: 0,
+        Purged: 0,
+        Replaced: 0,
+        Retired: 0,
+        'Test Ready': 0,
+        Unknown: 0,
       };
 
       counts.forEach((count) => {

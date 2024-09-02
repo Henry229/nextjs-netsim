@@ -10,7 +10,7 @@ export async function getJasperDevices() {
 
 export async function changeJasperDeviceStatus(
   iccid: string,
-  status: 'ACTIVATED' | 'DEACTIVATED'
+  status: 'Activated' | 'Deactivated'
 ) {
   try {
     await jasperService.changeSimStatus(iccid, status);

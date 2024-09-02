@@ -40,14 +40,14 @@ interface JasperDevice {
 }
 
 const STATUS = [
-  'ACTIVATED',
-  'ACTIVATION_READY',
-  'DEACTIVATED',
-  'INVENTORY',
-  'PURGED',
-  'REPLACED',
-  'RETIRED',
-  'TEST_READY',
+  'Activated',
+  'Activation Ready',
+  'Deactivated',
+  'Inventory',
+  'Purged',
+  'Replaced',
+  'Retired',
+  'Test Ready',
 ] as const;
 
 type StatusType = (typeof STATUS)[number] | 'all';
@@ -67,7 +67,7 @@ export default function JasperTable({ initialDevices }: JasperTableProps) {
   const { toast } = useToast();
 
   const handleChangeStatus = useCallback(
-    async (iccid: string, newStatus: 'ACTIVATED' | 'DEACTIVATED') => {
+    async (iccid: string, newStatus: 'Activated' | 'Deactivated') => {
       const result = await changeJasperDeviceStatus(iccid, newStatus);
       if (result.success) {
         setDevices((prevDevices) =>
@@ -210,17 +210,17 @@ export default function JasperTable({ initialDevices }: JasperTableProps) {
               <TableCell>
                 <Button
                   className='bg-indigo-800 text-white hover:bg-indigo-950 p-0.5 mr-1 h-6 w-6'
-                  onClick={() => handleChangeStatus(device.iccid, 'ACTIVATED')}
-                  disabled={device.status === 'ACTIVATED'}
+                  onClick={() => handleChangeStatus(device.iccid, 'Activated')}
+                  disabled={device.status === 'Activated'}
                 >
                   <IoIosFlash />
                 </Button>
                 <Button
                   className='bg-rose-600 text-white hover:bg-rose-900 p-0.5 mr-1 h-6 w-6'
                   onClick={() =>
-                    handleChangeStatus(device.iccid, 'DEACTIVATED')
+                    handleChangeStatus(device.iccid, 'Deactivated')
                   }
-                  disabled={device.status === 'DEACTIVATED'}
+                  disabled={device.status === 'Deactivated'}
                 >
                   <IoIosFlashOff />
                 </Button>
