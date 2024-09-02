@@ -10,19 +10,35 @@ export async function getKoreDevices() {
 
 export async function changeKoreDeviceStatus(
   subscriptionId: string,
-  status: 'active' | 'deactivated'
+  status: 'Processing'
+  // status: 'active' | 'deactivated'
 ) {
   try {
-    await koreService.changeSimStatus(
+    const result = await koreService.changeSimStatus(
       'cmp-pp-org-4611',
       subscriptionId,
       status
     );
-    revalidatePath('/sim-management/kore-devices');
-    return { success: true };
+
+    if (result.success) {
+      revalidatePath('/sim-management/kore-devices');
+      return {
+        success: true,
+        message: result.message,
+        requestId: result.requestId,
+        updatedDevice: result.updatedDevice,
+      };
+    } else {
+      throw new Error(result.message || 'Failed to initiate status change');
+    }
   } catch (error) {
     console.error('Error changing Kore device status:', error);
-    return { success: false, error: 'Failed to change Kore device status' };
+    return {
+      success: false,
+      error: 'Failed to change Kore device status',
+      message:
+        error instanceof Error ? error.message : 'An unexpected error occurred',
+    };
   }
 }
 

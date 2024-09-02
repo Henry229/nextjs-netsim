@@ -116,15 +116,21 @@ export const koreService = {
       console.log('Response:', JSON.stringify(response.data, null, 2));
 
       if (response.data.status === 'success') {
-        await prisma.netKoreDevices.update({
+        const provisioningRequestId =
+          response.data.data['provisioning-request-id'];
+        const updatedDevice = await prisma.netKoreDevices.update({
           where: { subscription_id: subscriptionId },
-          data: { state: status },
+          data: {
+            state: 'Processing',
+            provisioning_request_id: provisioningRequestId,
+          },
         });
 
         return {
           success: true,
-          message: `SIM status changed to ${status}`,
-          requestId: response.data.data['provisioning-request-id'],
+          message: `SIM status changed to ${subscriptionId} is processing`,
+          requestId: provisioningRequestId,
+          updatedDevice: updatedDevice,
         };
       } else {
         throw new Error(response.data.message || 'Failed to change SIM status');

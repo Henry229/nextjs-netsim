@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, FormEvent } from 'react';
+import React, { useState, useCallback, FormEvent, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -23,6 +23,7 @@ import { X } from 'lucide-react';
 import Pagination from './pagination';
 import { useToast } from '@/components/ui/use-toast';
 import { changeKoreDeviceStatus, searchKoreDeviceByIccid } from '@/lib/kore';
+mport { Badge } from '@/components/ui/badge';
 
 interface KoreDevice {
   iccid: string;
@@ -42,6 +43,7 @@ const STATES = [
   'Pending Scrap',
   'Scrapped',
   'Barred',
+  'Processing',
 ] as const;
 
 type StateType = (typeof STATES)[number] | 'all';
@@ -58,22 +60,28 @@ export default function KoreTable({ initialDevices }: KoreTableProps) {
   const [searchIccid, setSearchIccid] = useState('');
   const [selectedState, setSelectedState] = useState<StateType>('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [processingCount, setProcessingCount] = useState(0);
   const { toast } = useToast();
 
+  useEffect(() => {
+    const count = devices.filter(device => device.state === 'Processing').length;
+    setProcessingCount(count);
+  }, [devices]);
+
   const handleChangeStatus = useCallback(
-    async (subscriptionId: string, newStatus: 'active' | 'deactivated') => {
+    async (subscriptionId: string, newStatus: 'Processing') => {
       const result = await changeKoreDeviceStatus(subscriptionId, newStatus);
       if (result.success) {
         setDevices((prevDevices) =>
           prevDevices.map((device) =>
             device.subscription_id === subscriptionId
-              ? { ...device, state: newStatus }
+              ? { ...device, state: 'Processing' }
               : device
           )
         );
         toast({
-          title: 'Success',
-          description: `Device status changed to ${newStatus}`,
+          title: 'Status Change Processing',
+          description: `Device status changed to ${subscriptionId} is processing`,
         });
       } else {
         toast({
@@ -203,18 +211,23 @@ export default function KoreTable({ initialDevices }: KoreTableProps) {
                 <Button
                   className='bg-indigo-800 text-white hover:bg-indigo-950 p-0.5 mr-1 h-6 w-6'
                   onClick={() =>
-                    handleChangeStatus(device.subscription_id, 'active')
+                    handleChangeStatus(device.subscription_id, 'Processing')
                   }
-                  disabled={device.state === 'Active'}
+                  disabled={
+                    device.state === 'Active' || device.state === 'Processing'
+                  }
                 >
                   <IoIosFlash />
                 </Button>
                 <Button
                   className='bg-rose-600 text-white hover:bg-rose-900 p-0.5 mr-1 h-6 w-6'
                   onClick={() =>
-                    handleChangeStatus(device.subscription_id, 'deactivated')
+                    handleChangeStatus(device.subscription_id, 'Processing')
                   }
-                  disabled={device.state === 'Deactivated'}
+                  disabled={
+                    device.state === 'Deactivated' ||
+                    device.state === 'Processing'
+                  }
                 >
                   <IoIosFlashOff />
                 </Button>
