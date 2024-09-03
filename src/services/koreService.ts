@@ -189,4 +189,44 @@ export const koreService = {
       throw error;
     }
   },
+  getProcessingRequests: async () => {
+    try {
+      const response = await koreApi.get(
+        `/v1/accounts/${ACCOUNT_ID}/provisioning-requests`
+      );
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching processing requests:', error);
+      throw error;
+    }
+  },
+
+  updateProcessingStatus: async (provisioningRequestIds: string[]) => {
+    try {
+      const updatePromises = provisioningRequestIds.map(async (id) => {
+        const response = await koreApi.get(
+          `/v1/accounts/${ACCOUNT_ID}/provisioning-requests/${id}`
+        );
+        const status = response.data.data.status;
+
+        if (status === 'completed') {
+          const subscriptions = response.data.data.subscriptions;
+          for (const sub of subscriptions) {
+            await prisma.netKoreDevices.updateMany({
+              where: { subscription_id: sub['subscription-id'] },
+              data: { state: sub['completion-status'] },
+            });
+          }
+        }
+
+        return { id, status };
+      });
+
+      const results = await Promise.all(updatePromises);
+      return results;
+    } catch (error) {
+      console.error('Error updating processing status:', error);
+      throw error;
+    }
+  },
 };

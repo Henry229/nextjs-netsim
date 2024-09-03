@@ -51,3 +51,24 @@ export async function searchKoreDeviceByIccid(iccid: string) {
     return [];
   }
 }
+
+export async function getProcessingRequests() {
+  try {
+    const result = await koreService.getProcessingRequests();
+    return result;
+  } catch (error) {
+    console.error('Error fetching processing requests:', error);
+    throw error;
+  }
+}
+
+export async function updateProcessingStatus(provisioningRequestIds: string[]) {
+  try {
+    await koreService.updateProcessingStatus(provisioningRequestIds);
+    revalidatePath('/sim-management/kore-devices/processing');
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating processing status:', error);
+    throw error;
+  }
+}

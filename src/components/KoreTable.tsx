@@ -24,6 +24,7 @@ import Pagination from './pagination';
 import { useToast } from '@/components/ui/use-toast';
 import { changeKoreDeviceStatus, searchKoreDeviceByIccid } from '@/lib/kore';
 import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
 interface KoreDevice {
   iccid: string;
@@ -171,12 +172,14 @@ export default function KoreTable({ initialDevices }: KoreTableProps) {
           </div>
           <Button type='submit'>Search</Button>
         </form>
-        <div className='flex items-center'>
-          <span className='mr-2'>Processing:</span>
-          <Badge variant='secondary' className='text-sm'>
-            {processingCount}
-          </Badge>
-        </div>
+        <Link href='/sim-management/kore-devices/processing'>
+          <div className='flex items-center'>
+            <span className='mr-2'>Processing:</span>
+            <Badge variant='secondary' className='text-sm'>
+              {processingCount}
+            </Badge>
+          </div>
+        </Link>
       </div>
       <Select onValueChange={handleStateChange}>
         <SelectTrigger className='w-[180px] mb-4'>
