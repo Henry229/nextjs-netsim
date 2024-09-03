@@ -73,23 +73,34 @@ export default function ProcessingTable() {
   const handleUpdateStatus = async () => {
     for (const provisioningRequestId of selectedDevices) {
       try {
-        const status = await findRequestStatusByProvisioningRequestId(
-          'cmp-pp-org-4611',
-          provisioningRequestId
-        );
-        if (status) {
-          await updateKoreDeviceStatus(provisioningRequestId, status);
-          setDevices((prev) =>
-            prev.map((device) =>
-              device.provisioning_request_id === provisioningRequestId
-                ? { ...device, status }
-                : device
-            )
+        const { success, status, requestType } =
+          await findRequestStatusByProvisioningRequestId(
+            'cmp-pp-org-4611',
+            provisioningRequestId
           );
-          toast({
-            title: 'Status Updated',
-            description: `Device ${provisioningRequestId} status updated to ${status}`,
-          });
+        if (success && status === 'completed') {
+          const device = devices.find(
+            (d) => d.provisioning_request_id === provisioningRequestId
+          );
+          if (device) {
+            await updateKoreDeviceStatus(
+              device.iccid,
+              device.subscription_id,
+              provisioningRequestId,
+              status
+            );
+            setDevices((prev) =>
+              prev.map((device) =>
+                device.provisioning_request_id === provisioningRequestId
+                  ? { ...device, status }
+                  : device
+              )
+            );
+            toast({
+              title: 'Status Updated',
+              description: `Device ${provisioningRequestId} status updated to ${status}`,
+            });
+          }
         }
       } catch (error) {
         console.error('Error updating status:', error);

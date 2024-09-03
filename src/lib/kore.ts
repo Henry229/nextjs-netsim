@@ -63,16 +63,16 @@ export async function getProcessingStatus() {
   }
 }
 
-export async function updateProcessingStatus(provisioningRequestIds: string[]) {
-  try {
-    await koreService.updateProcessingStatus(provisioningRequestIds);
-    revalidatePath('/sim-management/kore-devices/processing');
-    return { success: true };
-  } catch (error) {
-    console.error('Error updating processing status:', error);
-    throw error;
-  }
-}
+// export async function updateProcessingStatus(provisioningRequestIds: string[]) {
+//   try {
+//     await koreService.updateProcessingStatus(provisioningRequestIds);
+//     revalidatePath('/sim-management/kore-devices/processing');
+//     return { success: true };
+//   } catch (error) {
+//     console.error('Error updating processing status:', error);
+//     throw error;
+//   }
+// }
 
 export async function findRequestStatusByProvisioningRequestId(
   accountId: string,
@@ -83,19 +83,13 @@ export async function findRequestStatusByProvisioningRequestId(
       accountId,
       provisioningRequestId
     );
-    if (result.success) {
-      revalidatePath('/sim-management/kore-devices/processing');
-      return {
-        success: true,
-        message: `SIM status changed to ${provisioningRequestId} is processing`,
-        requestId: provisioningRequestId,
-        updatedDevice: result.updatedDevice,
-      };
-    } else {
-      throw new Error(result.message || 'Failed to get request status');
-    }
-    // const request = result.find((req: any) => req.id === provisioningRequestId);
-    // return request ? request.state : null;
+    revalidatePath('/sim-management/kore-devices/processing');
+    return {
+      success: true,
+      message: `SIM 상태가 ${provisioningRequestId}로 변경되어 처리 중입니다`,
+      status: result.status,
+      requestType: result.requestType,
+    };
   } catch (error) {
     console.error('Error finding request status:', error);
     return {
@@ -108,11 +102,18 @@ export async function findRequestStatusByProvisioningRequestId(
 }
 
 export async function updateKoreDeviceStatus(
+  iccid: string,
+  subscriptionId: string,
   provisioningRequestId: string,
   status: string
 ) {
   try {
-    await koreService.updateProcessingStatus([provisioningRequestId]);
+    await koreService.updateProcessingStatus(
+      iccid,
+      subscriptionId,
+      provisioningRequestId,
+      status
+    );
     revalidatePath('/sim-management/kore-devices/processing');
     return { success: true };
   } catch (error) {

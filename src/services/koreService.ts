@@ -200,6 +200,7 @@ export const koreService = {
       throw error;
     }
   },
+
   getProcessingStatus: async () => {
     try {
       const processingDevices = await prisma.netKoreDevices.findMany({
@@ -215,31 +216,38 @@ export const koreService = {
   findRequestStatusByProvisioningRequestId: async (
     ACCOUNT_ID: string,
     provisioningRequestId: string
-  ) => {},
-
-  updateProcessingStatus: async (provisioningRequestIds: string[]) => {
+  ) => {
     try {
-      const updatePromises = provisioningRequestIds.map(async (id) => {
-        const response = await koreApi.get(
-          `/v1/accounts/${ACCOUNT_ID}/provisioning-requests/${id}`
-        );
-        const status = response.data.data.status;
+      const response = await koreApi.get(
+        `/v1/accounts/${ACCOUNT_ID}/provisioning-requests/${provisioningRequestId}`
+      );
+      const status = response.data.status;
+      const requestType = response.data['request-type']['request-type'];
+      return { status, requestType };
+    } catch (error) {
+      console.error('Error finding request status:', error);
+      throw error;
+    }
+  },
 
-        if (status === 'completed') {
-          const subscriptions = response.data.data.subscriptions;
-          for (const sub of subscriptions) {
-            await prisma.netKoreDevices.updateMany({
-              where: { subscription_id: sub['subscription-id'] },
-              data: { state: sub['completion-status'] },
-            });
-          }
-        }
-
-        return { id, status };
+  updateProcessingStatus: async (
+    iccid: string,
+    subscriptionId: string,
+    provisioningRequestId: string,
+    status: string
+  ) => {
+    try {
+      const updatedDevice = await prisma.netKoreDevices.update({
+        where: {
+          iccid: iccid,
+          subscription_id: subscriptionId,
+          provisioning_request_id: provisioningRequestId,
+        },
+        data: {
+          state: status,
+        },
       });
-
-      const results = await Promise.all(updatePromises);
-      return results;
+      return { updatedDevice, status };
     } catch (error) {
       console.error('Error updating processing status:', error);
       throw error;
