@@ -72,24 +72,28 @@ export default function KoreTable({ initialDevices }: KoreTableProps) {
   }, [devices]);
 
   const handleChangeStatus = useCallback(
-    async (subscriptionId: string, newStatus: 'Processing') => {
+    async (subscriptionId: string, newStatus: 'Activated' | 'Deactivated') => {
       const result = await changeKoreDeviceStatus(subscriptionId, newStatus);
       if (result.success) {
         setDevices((prevDevices) =>
           prevDevices.map((device) =>
             device.subscription_id === subscriptionId
-              ? { ...device, state: 'Processing' }
+              ? {
+                  ...device,
+                  state:
+                    newStatus === 'Activated' ? 'Activated' : 'Deactivated',
+                }
               : device
           )
         );
         toast({
-          title: 'Status Change Processing',
-          description: `Device status changed to ${subscriptionId} is processing`,
+          title: 'Status Changed',
+          description: `Device status changed to ${subscriptionId} is ${newStatus}`,
         });
       } else {
         toast({
           title: 'Error',
-          description: 'Failed to change device status',
+          description: result.message || 'Failed to change device status',
           variant: 'destructive',
         });
       }
@@ -224,7 +228,7 @@ export default function KoreTable({ initialDevices }: KoreTableProps) {
                 <Button
                   className='bg-indigo-800 text-white hover:bg-indigo-950 p-0.5 mr-1 h-6 w-6'
                   onClick={() =>
-                    handleChangeStatus(device.subscription_id, 'Processing')
+                    handleChangeStatus(device.subscription_id, 'Activated')
                   }
                   disabled={
                     device.state === 'Active' || device.state === 'Processing'
@@ -235,7 +239,7 @@ export default function KoreTable({ initialDevices }: KoreTableProps) {
                 <Button
                   className='bg-rose-600 text-white hover:bg-rose-900 p-0.5 mr-1 h-6 w-6'
                   onClick={() =>
-                    handleChangeStatus(device.subscription_id, 'Processing')
+                    handleChangeStatus(device.subscription_id, 'Deactivated')
                   }
                   disabled={
                     device.state === 'Deactivated' ||

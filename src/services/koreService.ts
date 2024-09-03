@@ -6,6 +6,7 @@ const API_BASE_URL = process.env.KORE_API_BASE_URL;
 const API_GATEWAY_KEY = process.env.KORE_API_GATEWAY_KEY;
 const CLIENT_ID = process.env.KORE_CLIENT_ID;
 const CLIENT_SECRET = process.env.KORE_CLIENT_SECRET;
+const ACCOUNT_ID = 'cmp-pp-org-4611';
 
 async function getAuthToken() {
   const headers = {
@@ -63,11 +64,12 @@ export const koreService = {
     imei: string | null = null
   ) => {
     try {
+      console.log(`Attempting to change status to: ${status}`);
       let endpoint: string;
       let requestBody: any;
 
-      switch (status) {
-        case 'active':
+      switch (status.toLowerCase()) {
+        case 'activated':
           endpoint = `/v1/accounts/${accountId}/provisioning-requests/activate`;
           requestBody = {
             activate: {
@@ -92,7 +94,7 @@ export const koreService = {
             },
           };
           break;
-        case 'SUSPENDED':
+        case 'suspended':
           endpoint = `/v1/accounts/${accountId}/provisioning-requests/suspend`;
           requestBody = {
             suspend: {
@@ -100,13 +102,22 @@ export const koreService = {
             },
           };
           break;
+        case 'processing':
+          console.log('Processing status detected, returning immediately');
+          return {
+            success: true,
+            message: `SIM ${subscriptionId} status change is processing`,
+            requestId: null,
+            updatedDevice: null,
+          };
         default:
-          throw new Error('Invalid status. Must be active or deactivated.');
+          console.log('>>>> Invalid status:', status);
+          throw new Error('Invalid status. Must be Activated or Deactivated.');
       }
 
       if (imei) {
         requestBody[
-          status === 'active' ? 'activate' : status
+          status === 'Activated' ? 'Activated' : status
         ].subscriptions[0].imei = imei;
       }
       console.log('Sending request to:', endpoint);
@@ -189,17 +200,22 @@ export const koreService = {
       throw error;
     }
   },
-  getProcessingRequests: async () => {
+  getProcessingStatus: async () => {
     try {
-      const response = await koreApi.get(
-        `/v1/accounts/${ACCOUNT_ID}/provisioning-requests`
-      );
-      return response.data.data;
+      const processingDevices = await prisma.netKoreDevices.findMany({
+        where: { state: 'Processing' },
+      });
+      return processingDevices;
     } catch (error) {
-      console.error('Error fetching processing requests:', error);
+      console.error('Error fetching processing status in Kore:', error);
       throw error;
     }
   },
+
+  findRequestStatusByProvisioningRequestId: async (
+    ACCOUNT_ID: string,
+    provisioningRequestId: string
+  ) => {},
 
   updateProcessingStatus: async (provisioningRequestIds: string[]) => {
     try {

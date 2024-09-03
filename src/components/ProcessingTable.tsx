@@ -15,13 +15,14 @@ import { useToast } from '@/components/ui/use-toast';
 import {
   findRequestStatusByProvisioningRequestId,
   updateKoreDeviceStatus,
+  getProcessingStatus,
 } from '@/lib/kore';
 
 interface ProcessingDevice {
   iccid: string;
   subscription_id: string;
-  provisioning_request_id: string;
-  status: string;
+  provisioning_request_id: string | null;
+  state: string;
 }
 
 export default function ProcessingTable() {
@@ -31,36 +32,31 @@ export default function ProcessingTable() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Fetch processing devices from the API
-    // This is a placeholder, replace with actual API call
     const fetchProcessingDevices = async () => {
-      // const response = await fetch('/api/kore/processing-devices');
-      // const data = await response.json();
-      // setDevices(data);
-      setDevices([
-        {
-          iccid: '1234',
-          subscription_id: 'sub1',
-          provisioning_request_id: 'req1',
-          status: 'pending',
-        },
-        {
-          iccid: '5678',
-          subscription_id: 'sub2',
-          provisioning_request_id: 'req2',
-          status: 'pending',
-        },
-      ]);
+      try {
+        const fetchingData = await getProcessingStatus();
+        console.log('**** fetching Data:', fetchingData);
+        setDevices(fetchingData);
+      } catch (error) {
+        console.error('Error fetching processing devices:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to fetch processing devices',
+          variant: 'destructive',
+        });
+      }
     };
     fetchProcessingDevices();
-  }, []);
+  }, [toast]);
 
   const handleSelectAll = () => {
     if (isAllSelected) {
       setSelectedDevices([]);
     } else {
       setSelectedDevices(
-        devices.map((device) => device.provisioning_request_id)
+        devices
+          .map((device) => device.provisioning_request_id)
+          .filter((id) => id !== null) as string[]
       );
     }
     setIsAllSelected(!isAllSelected);
@@ -137,17 +133,17 @@ export default function ProcessingTable() {
               <TableCell>
                 <Checkbox
                   checked={selectedDevices.includes(
-                    device.provisioning_request_id
+                    device.provisioning_request_id ?? ''
                   )}
                   onCheckedChange={() =>
-                    handleSelectDevice(device.provisioning_request_id)
+                    handleSelectDevice(device.provisioning_request_id ?? '')
                   }
                 />
               </TableCell>
               <TableCell>{device.iccid}</TableCell>
               <TableCell>{device.subscription_id}</TableCell>
-              <TableCell>{device.provisioning_request_id}</TableCell>
-              <TableCell>{device.status}</TableCell>
+              <TableCell>{device.provisioning_request_id ?? ''}</TableCell>
+              <TableCell>{device.state}</TableCell>
             </TableRow>
           ))}
         </TableBody>

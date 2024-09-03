@@ -10,9 +10,10 @@ export async function getKoreDevices() {
 
 export async function changeKoreDeviceStatus(
   subscriptionId: string,
-  status: 'Processing'
+  status: 'Activated' | 'Deactivated' | 'Processing'
   // status: 'active' | 'deactivated'
 ) {
+  console.log(`Changing status for ${subscriptionId} to ${status}`);
   try {
     const result = await koreService.changeSimStatus(
       'cmp-pp-org-4611',
@@ -52,9 +53,9 @@ export async function searchKoreDeviceByIccid(iccid: string) {
   }
 }
 
-export async function getProcessingRequests() {
+export async function getProcessingStatus() {
   try {
-    const result = await koreService.getProcessingRequests();
+    const result = await koreService.getProcessingStatus();
     return result;
   } catch (error) {
     console.error('Error fetching processing requests:', error);
@@ -69,6 +70,53 @@ export async function updateProcessingStatus(provisioningRequestIds: string[]) {
     return { success: true };
   } catch (error) {
     console.error('Error updating processing status:', error);
+    throw error;
+  }
+}
+
+export async function findRequestStatusByProvisioningRequestId(
+  accountId: string,
+  provisioningRequestId: string
+) {
+  try {
+    const result = await koreService.findRequestStatusByProvisioningRequestId(
+      accountId,
+      provisioningRequestId
+    );
+    if (result.success) {
+      revalidatePath('/sim-management/kore-devices/processing');
+      return {
+        success: true,
+        message: `SIM status changed to ${provisioningRequestId} is processing`,
+        requestId: provisioningRequestId,
+        updatedDevice: result.updatedDevice,
+      };
+    } else {
+      throw new Error(result.message || 'Failed to get request status');
+    }
+    // const request = result.find((req: any) => req.id === provisioningRequestId);
+    // return request ? request.state : null;
+  } catch (error) {
+    console.error('Error finding request status:', error);
+    return {
+      success: false,
+      error: 'Failed to find request status',
+      message:
+        error instanceof Error ? error.message : 'An unexpected error occurred',
+    };
+  }
+}
+
+export async function updateKoreDeviceStatus(
+  provisioningRequestId: string,
+  status: string
+) {
+  try {
+    await koreService.updateProcessingStatus([provisioningRequestId]);
+    revalidatePath('/sim-management/kore-devices/processing');
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating Kore device status:', error);
     throw error;
   }
 }
