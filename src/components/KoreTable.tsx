@@ -23,7 +23,7 @@ import { X } from 'lucide-react';
 import Pagination from './pagination';
 import { useToast } from '@/components/ui/use-toast';
 import { changeKoreDeviceStatus, searchKoreDeviceByIccid } from '@/lib/kore';
-mport { Badge } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/badge';
 
 interface KoreDevice {
   iccid: string;
@@ -64,7 +64,9 @@ export default function KoreTable({ initialDevices }: KoreTableProps) {
   const { toast } = useToast();
 
   useEffect(() => {
-    const count = devices.filter(device => device.state === 'Processing').length;
+    const count = devices.filter(
+      (device) => device.state === 'Processing'
+    ).length;
     setProcessingCount(count);
   }, [devices]);
 
@@ -147,27 +149,35 @@ export default function KoreTable({ initialDevices }: KoreTableProps) {
 
   return (
     <div>
-      <form onSubmit={handleSearch} className='flex mb-4 gap-2'>
-        <div className='relative flex-grow'>
-          <Input
-            type='text'
-            placeholder='Search by ICCID'
-            value={searchIccid}
-            onChange={(e) => setSearchIccid(e.target.value)}
-            className='pr-8'
-          />
-          {searchIccid && (
-            <button
-              type='button'
-              onClick={handleClearSearch}
-              className='absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700'
-            >
-              <X size={16} />
-            </button>
-          )}
+      <div className='flex justify-between items-center mb-4'>
+        <form onSubmit={handleSearch} className='flex gap-2'>
+          <div className='relative flex-grow'>
+            <Input
+              type='text'
+              placeholder='Search by ICCID'
+              value={searchIccid}
+              onChange={(e) => setSearchIccid(e.target.value)}
+              className='pr-8'
+            />
+            {searchIccid && (
+              <button
+                type='button'
+                onClick={handleClearSearch}
+                className='absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700'
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+          <Button type='submit'>Search</Button>
+        </form>
+        <div className='flex items-center'>
+          <span className='mr-2'>Processing:</span>
+          <Badge variant='secondary' className='text-sm'>
+            {processingCount}
+          </Badge>
         </div>
-        <Button type='submit'>Search</Button>
-      </form>
+      </div>
       <Select onValueChange={handleStateChange}>
         <SelectTrigger className='w-[180px] mb-4'>
           <SelectValue placeholder='Filter by state' />

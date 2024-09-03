@@ -82,12 +82,13 @@ model NetKoreDevices {
 }
 
 enum status {
-  ACTIVATED
-  ACTIVATION_READY
-  DEACTIVATED
-  INVENTORY
-  PURGED
-  REPLACED
-  RETIRED
-  TEST_READY
+  Activated
+  ActivationReady
+  Deactivated
+  Inventory
+  Purged
+  Replaced
+  Retired
+  TestReady
+  Processing
 }
