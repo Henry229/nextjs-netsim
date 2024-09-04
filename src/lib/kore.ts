@@ -86,9 +86,9 @@ export async function findRequestStatusByProvisioningRequestId(
     revalidatePath('/sim-management/kore-devices/processing');
     return {
       success: true,
-      message: `SIM 상태가 ${provisioningRequestId}로 변경되어 처리 중입니다`,
-      status: result.status,
-      requestType: result.requestType,
+      message: `SIM status has changed to ${provisioningRequestId} and is being processed`,
+      status: result?.status,
+      requestType: result?.reqTypeRes,
     };
   } catch (error) {
     console.error('Error finding request status:', error);

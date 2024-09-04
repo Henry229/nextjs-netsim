@@ -83,16 +83,25 @@ export default function ProcessingTable() {
             (d) => d.provisioning_request_id === provisioningRequestId
           );
           if (device) {
+            let updatedStatus = status;
+            if (
+              requestType === 'Activation' ||
+              requestType === 'Reactivation'
+            ) {
+              updatedStatus = 'Active';
+            } else if (requestType === 'Deactivation') {
+              updatedStatus = 'Deactivated';
+            }
             await updateKoreDeviceStatus(
               device.iccid,
               device.subscription_id,
               provisioningRequestId,
-              status
+              updatedStatus
             );
             setDevices((prev) =>
               prev.map((device) =>
                 device.provisioning_request_id === provisioningRequestId
-                  ? { ...device, status }
+                  ? { ...device, updatedStatus }
                   : device
               )
             );

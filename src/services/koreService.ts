@@ -221,9 +221,19 @@ export const koreService = {
       const response = await koreApi.get(
         `/v1/accounts/${ACCOUNT_ID}/provisioning-requests/${provisioningRequestId}`
       );
-      const status = response.data.status;
-      const requestType = response.data['request-type']['request-type'];
-      return { status, requestType };
+      if (Object.keys(response.data).length > 0) {
+        const requestType = Object.keys(response.data)[0];
+        if (response.data[requestType]) {
+          const status = response.data[requestType].status;
+          const reqTypeRes = response.data[requestType]['request-type'];
+          return { status, reqTypeRes };
+        } else {
+          console.log('**** Status not found');
+        }
+      } else {
+        console.log('**** No data in response');
+        throw new Error('No data in response from Kore API');
+      }
     } catch (error) {
       console.error('Error finding request status:', error);
       throw error;
