@@ -79,28 +79,52 @@ export default function ProcessingTable() {
             'cmp-pp-org-4611',
             provisioningRequestId
           );
-        if (success && status === 'completed') {
-          const device = devices.find(
-            (d) => d.provisioning_request_id === provisioningRequestId
-          );
-          if (device) {
-            let updatedStatus = status;
-            if (
-              requestType === 'Activation' ||
-              requestType === 'Reactivation'
-            ) {
-              updatedStatus = 'Active';
-            } else if (requestType === 'Deactivation') {
-              updatedStatus = 'Deactivated';
+        if (success) {
+          if (status === 'completed') {
+            const device = devices.find(
+              (d) => d.provisioning_request_id === provisioningRequestId
+            );
+            if (device) {
+              let updatedStatus = status;
+              if (
+                requestType === 'Activation' ||
+                requestType === 'Reactivation'
+              ) {
+                updatedStatus = 'Active';
+              } else if (requestType === 'Deactivation') {
+                updatedStatus = 'Deactivated';
+              }
+
+              // updateKoreDeviceStatus 함수 호출
+              await updateKoreDeviceStatus(
+                device.iccid,
+                device.subscription_id,
+                provisioningRequestId,
+                updatedStatus
+              );
+
+              const updatedDevice: ProcessingDevice = {
+                ...device,
+                state: updatedStatus,
+              };
+              updatedDevices.push(updatedDevice);
+              toast({
+                title: 'Status Updated',
+                description: `Device ${provisioningRequestId} status updated to ${updatedStatus}.`,
+                style: { background: 'green', color: 'white' },
+              });
             }
-            const updatedDevice: ProcessingDevice = {
-              ...device,
-              state: updatedStatus,
-            };
-            updatedDevices.push(updatedDevice);
+          } else if (status === 'submitted' || status === 'pending') {
             toast({
-              title: 'Status Updated',
-              description: `Device ${provisioningRequestId} status updated to ${updatedStatus}`,
+              title: 'Processing',
+              description: `Device ${provisioningRequestId} is still processing. Status: ${status}`,
+              style: { background: 'blue', color: 'white' },
+            });
+          } else {
+            toast({
+              title: 'Fail to update status',
+              description: `Device ${provisioningRequestId} status is unexpected: ${status}`,
+              variant: 'destructive',
             });
           }
         }
