@@ -71,6 +71,7 @@ export default function ProcessingTable() {
   };
 
   const handleUpdateStatus = async () => {
+    const updatedDevices: ProcessingDevice[] = [];
     for (const provisioningRequestId of selectedDevices) {
       try {
         const { success, status, requestType } =
@@ -92,22 +93,14 @@ export default function ProcessingTable() {
             } else if (requestType === 'Deactivation') {
               updatedStatus = 'Deactivated';
             }
-            await updateKoreDeviceStatus(
-              device.iccid,
-              device.subscription_id,
-              provisioningRequestId,
-              updatedStatus
-            );
-            setDevices((prev) =>
-              prev.map((device) =>
-                device.provisioning_request_id === provisioningRequestId
-                  ? { ...device, updatedStatus }
-                  : device
-              )
-            );
+            const updatedDevice: ProcessingDevice = {
+              ...device,
+              state: updatedStatus,
+            };
+            updatedDevices.push(updatedDevice);
             toast({
               title: 'Status Updated',
-              description: `Device ${provisioningRequestId} status updated to ${status}`,
+              description: `Device ${provisioningRequestId} status updated to ${updatedStatus}`,
             });
           }
         }
@@ -120,6 +113,14 @@ export default function ProcessingTable() {
         });
       }
     }
+
+    // 업데이트된 디바이스 정보로 테이블 갱신
+    setDevices((prevDevices) =>
+      prevDevices.map(
+        (device) =>
+          updatedDevices.find((d) => d.iccid === device.iccid) || device
+      )
+    );
   };
 
   return (

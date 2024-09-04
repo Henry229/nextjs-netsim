@@ -74,21 +74,24 @@ export default function KoreTable({ initialDevices }: KoreTableProps) {
   const handleChangeStatus = useCallback(
     async (subscriptionId: string, newStatus: 'Activated' | 'Deactivated') => {
       const result = await changeKoreDeviceStatus(subscriptionId, newStatus);
-      if (result.success) {
+      if (result.success && result.updatedDevice) {
         setDevices((prevDevices) =>
           prevDevices.map((device) =>
             device.subscription_id === subscriptionId
-              ? {
-                  ...device,
-                  state:
-                    newStatus === 'Activated' ? 'Activated' : 'Deactivated',
-                }
+              ? { ...device, state: result.updatedDevice!.state }
+              : device
+          )
+        );
+        setFilteredDevices((prevDevices) =>
+          prevDevices.map((device) =>
+            device.subscription_id === subscriptionId
+              ? { ...device, state: result.updatedDevice!.state }
               : device
           )
         );
         toast({
           title: 'Status Changed',
-          description: `Device status changed to ${subscriptionId} is ${newStatus}`,
+          description: `Device status changed to ${result.updatedDevice.state}`,
         });
       } else {
         toast({
